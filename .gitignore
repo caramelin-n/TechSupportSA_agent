@@ -2,3 +2,6 @@
 __pycache__/
 .pytest_cache/
 data/techsupport.db
+# Archivos locales que no deben versionarse
+AGENTS.md
+instructions.md
