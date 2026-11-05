@@ -1,0 +1,121 @@
+2026-10-21 14:00:00 INFO  Consulta ejecutada en copias (filas=50)
+2026-10-21 14:00:01 INFO  Health check ok: servicio de facturación v2.3.1
+2026-10-21 14:00:02 INFO  Sesión iniciada usuario=demo_2 origen=oficina
+2026-10-21 14:00:03 INFO  Cache refrescada entradas=53
+2026-10-21 14:00:04 INFO  Heartbeat servicio interno ok
+2026-10-21 14:00:05 INFO  Lectura de configuración desde /etc/demo/app.conf
+2026-10-21 14:00:06 INFO  Consulta ejecutada en copias (filas=56)
+2026-10-21 14:00:07 INFO  Health check ok: servicio de facturación v2.3.1
+2026-10-21 14:00:08 INFO  Sesión iniciada usuario=demo_8 origen=oficina
+2026-10-21 14:00:09 INFO  Cache refrescada entradas=59
+2026-10-21 14:00:10 INFO  Heartbeat servicio interno ok
+2026-10-21 14:00:11 INFO  Lectura de configuración desde /etc/demo/app.conf
+2026-10-21 14:00:12 INFO  Consulta ejecutada en copias (filas=62)
+2026-10-21 14:00:13 INFO  Health check ok: servicio de facturación v2.3.1
+2026-10-21 14:00:14 INFO  Sesión iniciada usuario=demo_14 origen=oficina
+2026-10-21 14:00:15 INFO  Cache refrescada entradas=65
+2026-10-21 14:00:16 INFO  Heartbeat servicio interno ok
+2026-10-21 14:00:17 INFO  Lectura de configuración desde /etc/demo/app.conf
+2026-10-21 14:00:18 INFO  Consulta ejecutada en copias (filas=68)
+2026-10-21 14:00:19 INFO  Health check ok: servicio de facturación v2.3.1
+2026-10-21 14:00:20 INFO  Sesión iniciada usuario=demo_20 origen=oficina
+2026-10-21 14:00:21 INFO  Cache refrescada entradas=71
+2026-10-21 14:00:22 INFO  Heartbeat servicio interno ok
+2026-10-21 14:00:23 INFO  Lectura de configuración desde /etc/demo/app.conf
+2026-10-21 14:00:24 INFO  Consulta ejecutada en copias (filas=74)
+2026-10-21 14:00:25 INFO  Health check ok: servicio de facturación v2.3.1
+2026-10-21 14:00:26 INFO  Sesión iniciada usuario=demo_26 origen=oficina
+2026-10-21 14:00:27 INFO  Cache refrescada entradas=77
+2026-10-21 14:00:28 INFO  Heartbeat servicio interno ok
+2026-10-21 14:00:29 INFO  Lectura de configuración desde /etc/demo/app.conf
+2026-10-21 14:00:30 INFO  Consulta ejecutada en copias (filas=80)
+2026-10-21 14:00:31 INFO  Health check ok: servicio de facturación v2.3.1
+2026-10-21 14:00:32 INFO  Sesión iniciada usuario=demo_32 origen=oficina
+2026-10-21 14:00:33 INFO  Cache refrescada entradas=83
+2026-10-21 14:00:34 INFO  Heartbeat servicio interno ok
+2026-10-21 14:00:35 INFO  Lectura de configuración desde /etc/demo/app.conf
+2026-10-21 14:00:36 INFO  Consulta ejecutada en copias (filas=86)
+2026-10-21 14:00:37 INFO  Health check ok: servicio de facturación v2.3.1
+2026-10-21 14:00:38 INFO  Sesión iniciada usuario=demo_38 origen=oficina
+2026-10-21 14:00:39 INFO  Cache refrescada entradas=89
+2026-10-21 14:00:40 INFO  Heartbeat servicio interno ok
+2026-10-21 14:00:41 INFO  Lectura de configuración desde /etc/demo/app.conf
+2026-10-21 14:00:42 INFO  Consulta ejecutada en copias (filas=92)
+2026-10-21 14:00:43 INFO  Health check ok: servicio de facturación v2.3.1
+2026-10-21 14:00:44 INFO  Sesión iniciada usuario=demo_44 origen=oficina
+2026-10-21 14:00:45 INFO  Cache refrescada entradas=95
+2026-10-21 14:00:46 INFO  Heartbeat servicio interno ok
+2026-10-21 14:00:47 INFO  Lectura de configuración desde /etc/demo/app.conf
+2026-10-21 14:00:48 INFO  Consulta ejecutada en copias (filas=98)
+2026-10-21 14:00:49 INFO  Health check ok: servicio de facturación v2.3.1
+2026-10-21 14:00:50 INFO  Sesión iniciada usuario=demo_50 origen=oficina
+2026-10-21 14:00:51 INFO  Cache refrescada entradas=101
+2026-10-21 14:00:52 INFO  Heartbeat servicio interno ok
+2026-10-21 14:00:53 INFO  Lectura de configuración desde /etc/demo/app.conf
+2026-10-21 14:00:54 INFO  Consulta ejecutada en copias (filas=104)
+2026-10-21 14:00:55 INFO  Health check ok: servicio de facturación v2.3.1
+2026-10-21 14:00:56 INFO  Sesión iniciada usuario=demo_56 origen=oficina
+2026-10-21 14:00:57 INFO  Cache refrescada entradas=107
+2026-10-21 14:00:58 INFO  Heartbeat servicio interno ok
+2026-10-21 14:00:59 INFO  Lectura de configuración desde /etc/demo/app.conf
+2026-10-21 14:01:00 INFO  Consulta ejecutada en copias (filas=110)
+2026-10-21 14:30:00 WARN  Respuesta lenta sin detalle adicional
+2026-10-21 14:01:01 INFO  Health check ok: servicio de facturación v2.3.1
+2026-10-21 14:01:02 INFO  Sesión iniciada usuario=demo_62 origen=oficina
+2026-10-21 14:01:03 INFO  Cache refrescada entradas=113
+2026-10-21 14:01:04 INFO  Heartbeat servicio interno ok
+2026-10-21 14:01:05 INFO  Lectura de configuración desde /etc/demo/app.conf
+2026-10-21 14:01:06 INFO  Consulta ejecutada en copias (filas=116)
+2026-10-21 14:01:07 INFO  Health check ok: servicio de facturación v2.3.1
+2026-10-21 14:01:08 INFO  Sesión iniciada usuario=demo_68 origen=oficina
+2026-10-21 14:01:09 INFO  Cache refrescada entradas=119
+2026-10-21 14:01:10 INFO  Heartbeat servicio interno ok
+2026-10-21 14:01:11 INFO  Lectura de configuración desde /etc/demo/app.conf
+2026-10-21 14:01:12 INFO  Consulta ejecutada en copias (filas=122)
+2026-10-21 14:01:13 INFO  Health check ok: servicio de facturación v2.3.1
+2026-10-21 14:01:14 INFO  Sesión iniciada usuario=demo_74 origen=oficina
+2026-10-21 14:01:15 INFO  Cache refrescada entradas=125
+2026-10-21 14:01:16 INFO  Heartbeat servicio interno ok
+2026-10-21 14:01:17 INFO  Lectura de configuración desde /etc/demo/app.conf
+2026-10-21 14:01:18 INFO  Consulta ejecutada en copias (filas=128)
+2026-10-21 14:01:19 INFO  Health check ok: servicio de facturación v2.3.1
+2026-10-21 14:01:20 INFO  Sesión iniciada usuario=demo_80 origen=oficina
+2026-10-21 14:01:21 INFO  Cache refrescada entradas=131
+2026-10-21 14:01:22 INFO  Heartbeat servicio interno ok
+2026-10-21 14:01:23 INFO  Lectura de configuración desde /etc/demo/app.conf
+2026-10-21 14:01:24 INFO  Consulta ejecutada en copias (filas=134)
+2026-10-21 14:01:25 INFO  Health check ok: servicio de facturación v2.3.1
+2026-10-21 14:01:26 INFO  Sesión iniciada usuario=demo_86 origen=oficina
+2026-10-21 14:01:27 INFO  Cache refrescada entradas=137
+2026-10-21 14:01:28 INFO  Heartbeat servicio interno ok
+2026-10-21 14:01:29 INFO  Lectura de configuración desde /etc/demo/app.conf
+2026-10-21 14:01:30 INFO  Consulta ejecutada en copias (filas=140)
+2026-10-21 14:01:31 INFO  Health check ok: servicio de facturación v2.3.1
+2026-10-21 14:01:32 INFO  Sesión iniciada usuario=demo_92 origen=oficina
+2026-10-21 14:01:33 INFO  Cache refrescada entradas=143
+2026-10-21 14:01:34 INFO  Heartbeat servicio interno ok
+2026-10-21 14:01:35 INFO  Lectura de configuración desde /etc/demo/app.conf
+2026-10-21 14:01:36 INFO  Consulta ejecutada en copias (filas=146)
+2026-10-21 14:01:37 INFO  Health check ok: servicio de facturación v2.3.1
+2026-10-21 14:01:38 INFO  Sesión iniciada usuario=demo_98 origen=oficina
+2026-10-21 14:01:39 INFO  Cache refrescada entradas=149
+2026-10-21 14:01:40 INFO  Heartbeat servicio interno ok
+2026-10-21 14:01:41 INFO  Lectura de configuración desde /etc/demo/app.conf
+2026-10-21 14:01:42 INFO  Consulta ejecutada en copias (filas=152)
+2026-10-21 14:01:43 INFO  Health check ok: servicio de facturación v2.3.1
+2026-10-21 14:01:44 INFO  Sesión iniciada usuario=demo_104 origen=oficina
+2026-10-21 14:01:45 INFO  Cache refrescada entradas=155
+2026-10-21 14:01:46 INFO  Heartbeat servicio interno ok
+2026-10-21 14:01:47 INFO  Lectura de configuración desde /etc/demo/app.conf
+2026-10-21 14:01:48 INFO  Consulta ejecutada en copias (filas=158)
+2026-10-21 14:01:49 INFO  Health check ok: servicio de facturación v2.3.1
+2026-10-21 14:01:50 INFO  Sesión iniciada usuario=demo_110 origen=oficina
+2026-10-21 14:01:51 INFO  Cache refrescada entradas=161
+2026-10-21 14:01:52 INFO  Heartbeat servicio interno ok
+2026-10-21 14:01:53 INFO  Lectura de configuración desde /etc/demo/app.conf
+2026-10-21 14:01:54 INFO  Consulta ejecutada en copias (filas=164)
+2026-10-21 14:01:55 INFO  Health check ok: servicio de facturación v2.3.1
+2026-10-21 14:01:56 INFO  Sesión iniciada usuario=demo_116 origen=oficina
+2026-10-21 14:01:57 INFO  Cache refrescada entradas=167
+2026-10-21 14:01:58 INFO  Heartbeat servicio interno ok
+2026-10-21 14:01:59 INFO  Lectura de configuración desde /etc/demo/app.conf
