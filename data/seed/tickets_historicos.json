@@ -1,0 +1,258 @@
+[
+  {
+    "id": "TCK-1001",
+    "created_at": "2026-10-12T09:15:00",
+    "requester_id": "U001",
+    "title": "Sistema de facturación no abre",
+    "description": "Al iniciar la aplicación aparece el error 'Connection timeout'. Ocurre desde esta mañana.",
+    "category": "Sistemas y aplicaciones",
+    "priority": "Alta",
+    "status": "En progreso",
+    "assignee_id": "S001",
+    "attachments": [
+      {"filename": "app_facturacion.log", "path": "data/samples/app_facturacion.log", "kind": "log", "analysis_summary": "Múltiples ERROR/FATAL de Connection timeout hacia db-prod-01:5432."}
+    ],
+    "comments": [],
+    "history": [
+      {"event_type": "CREATED", "old_value": null, "new_value": "Abierto", "actor_id": "U001", "timestamp": "2026-10-12T09:15:00"},
+      {"event_type": "FILE_ATTACHED", "old_value": null, "new_value": "app_facturacion.log", "actor_id": "U001", "timestamp": "2026-10-12T09:16:00"},
+      {"event_type": "STATUS_CHANGED", "old_value": "Abierto", "new_value": "En revisión", "actor_id": "S001", "timestamp": "2026-10-12T09:40:00"},
+      {"event_type": "STATUS_CHANGED", "old_value": "En revisión", "new_value": "En progreso", "actor_id": "S001", "timestamp": "2026-10-12T10:20:00"}
+    ]
+  },
+  {
+    "id": "TCK-1002",
+    "created_at": "2026-10-13T08:05:00",
+    "requester_id": "U002",
+    "title": "Sin internet en oficina de Ventas",
+    "description": "Desde temprano nadie en Ventas tiene internet. El navegador muestra que no se puede acceder al sitio.",
+    "category": "Redes y conectividad",
+    "priority": "Crítica",
+    "status": "Abierto",
+    "assignee_id": "S002",
+    "attachments": [
+      {"filename": "captura_navegador.png", "path": "data/samples/captura_navegador.png", "kind": "imagen", "analysis_summary": "Navegador con mensaje 'No se puede acceder a este sitio'."}
+    ],
+    "comments": [],
+    "history": [
+      {"event_type": "CREATED", "old_value": null, "new_value": "Abierto", "actor_id": "U002", "timestamp": "2026-10-13T08:05:00"},
+      {"event_type": "FILE_ATTACHED", "old_value": null, "new_value": "captura_navegador.png", "actor_id": "U002", "timestamp": "2026-10-13T08:06:00"}
+    ]
+  },
+  {
+    "id": "TCK-1003",
+    "created_at": "2026-10-14T11:00:00",
+    "requester_id": "U003",
+    "title": "Usuario bloqueado en carpeta compartida",
+    "description": "Al abrir la carpeta compartida aparece 'Error 0x80070005: acceso denegado'. No puede trabajar en sus archivos.",
+    "category": "Accesos y permisos",
+    "priority": "Media",
+    "status": "En revisión",
+    "assignee_id": "S001",
+    "attachments": [
+      {"filename": "captura_acceso_denegado.png", "path": "data/samples/captura_acceso_denegado.png", "kind": "imagen", "analysis_summary": "Ventana de error legible: 'Error 0x80070005: acceso denegado'."}
+    ],
+    "comments": [],
+    "history": [
+      {"event_type": "CREATED", "old_value": null, "new_value": "Abierto", "actor_id": "U003", "timestamp": "2026-10-14T11:00:00"},
+      {"event_type": "FILE_ATTACHED", "old_value": null, "new_value": "captura_acceso_denegado.png", "actor_id": "U003", "timestamp": "2026-10-14T11:01:00"},
+      {"event_type": "STATUS_CHANGED", "old_value": "Abierto", "new_value": "En revisión", "actor_id": "S001", "timestamp": "2026-10-14T13:30:00"}
+    ]
+  },
+  {
+    "id": "TCK-1004",
+    "created_at": "2026-10-15T09:20:00",
+    "requester_id": "U001",
+    "title": "Impresora del 2do piso no responde",
+    "description": "Desde ayer, al imprimir el PDF del reporte la impresora no responde. Reinició y no cambió. A Carla le pasa lo mismo.",
+    "category": "Hardware",
+    "priority": "Media",
+    "status": "Pendiente",
+    "assignee_id": "S001",
+    "attachments": [
+      {"filename": "reporte_impresora.txt", "path": "data/samples/reporte_impresora.txt", "kind": "txt", "analysis_summary": "Reporte informal: la impresora del 2do piso no responde al imprimir PDF; afecta también a Carla."}
+    ],
+    "comments": [],
+    "history": [
+      {"event_type": "CREATED", "old_value": null, "new_value": "Abierto", "actor_id": "U001", "timestamp": "2026-10-15T09:20:00"},
+      {"event_type": "FILE_ATTACHED", "old_value": null, "new_value": "reporte_impresora.txt", "actor_id": "U001", "timestamp": "2026-10-15T09:21:00"},
+      {"event_type": "STATUS_CHANGED", "old_value": "Abierto", "new_value": "En revisión", "actor_id": "S001", "timestamp": "2026-10-15T10:00:00"},
+      {"event_type": "STATUS_CHANGED", "old_value": "En revisión", "new_value": "Pendiente", "actor_id": "S001", "timestamp": "2026-10-15T12:00:00"}
+    ]
+  },
+  {
+    "id": "TCK-1005",
+    "created_at": "2026-10-16T10:10:00",
+    "requester_id": "U002",
+    "title": "Office no abre al iniciar",
+    "description": "La planilla de ventas no abre, el programa se cierra sin mensaje. Bloquea el cierre diario.",
+    "category": "Software",
+    "priority": "Baja",
+    "status": "Resuelto",
+    "assignee_id": "S002",
+    "attachments": [],
+    "comments": [
+      {"author_id": "S002", "text": "Reinstalado el paquete ofimático y verificado que abre.", "created_at": "2026-10-16T16:00:00"}
+    ],
+    "history": [
+      {"event_type": "CREATED", "old_value": null, "new_value": "Abierto", "actor_id": "U002", "timestamp": "2026-10-16T10:10:00"},
+      {"event_type": "STATUS_CHANGED", "old_value": "Abierto", "new_value": "En revisión", "actor_id": "S002", "timestamp": "2026-10-16T11:00:00"},
+      {"event_type": "STATUS_CHANGED", "old_value": "En revisión", "new_value": "En progreso", "actor_id": "S002", "timestamp": "2026-10-16T12:00:00"},
+      {"event_type": "COMMENT_ADDED", "old_value": null, "new_value": "Reinstalado el paquete ofimático y verificado que abre.", "actor_id": "S002", "timestamp": "2026-10-16T16:00:00"},
+      {"event_type": "STATUS_CHANGED", "old_value": "En progreso", "new_value": "Resuelto", "actor_id": "S002", "timestamp": "2026-10-16T16:05:00"}
+    ]
+  },
+  {
+    "id": "TCK-1006",
+    "created_at": "2026-10-19T07:45:00",
+    "requester_id": "U003",
+    "title": "Servidor caído, backup no completa",
+    "description": "El servidor principal de archivos está caído para toda la administración y el backup nocturno falló dos veces seguidas.",
+    "category": "Infraestructura",
+    "priority": "Crítica",
+    "status": "En progreso",
+    "assignee_id": "S002",
+    "attachments": [],
+    "comments": [],
+    "history": [
+      {"event_type": "CREATED", "old_value": null, "new_value": "Abierto", "actor_id": "U003", "timestamp": "2026-10-19T07:45:00"},
+      {"event_type": "STATUS_CHANGED", "old_value": "Abierto", "new_value": "En revisión", "actor_id": "S002", "timestamp": "2026-10-19T08:10:00"},
+      {"event_type": "ASSIGNED", "old_value": null, "new_value": "S002", "actor_id": "A001", "timestamp": "2026-10-19T08:15:00"},
+      {"event_type": "STATUS_CHANGED", "old_value": "En revisión", "new_value": "En progreso", "actor_id": "S002", "timestamp": "2026-10-19T09:00:00"}
+    ]
+  },
+  {
+    "id": "TCK-1007",
+    "created_at": "2026-10-20T09:05:00",
+    "requester_id": "U001",
+    "title": "La app de facturas da error de timeout",
+    "description": "Cuando intento entrar a facturas, la aplicación tarda muchísimo y después muestra un error de tiempo de espera. Me pasó también ayer.",
+    "category": "Sistemas y aplicaciones",
+    "priority": "Alta",
+    "status": "Abierto",
+    "assignee_id": null,
+    "attachments": [],
+    "comments": [],
+    "history": [
+      {"event_type": "CREATED", "old_value": null, "new_value": "Abierto", "actor_id": "U001", "timestamp": "2026-10-20T09:05:00"}
+    ]
+  },
+  {
+    "id": "TCK-1008",
+    "created_at": "2026-10-21T14:00:00",
+    "requester_id": "U002",
+    "title": "VPN no conecta desde casa",
+    "description": "Desde casa la VPN se queda en 'conectando' y nunca termina. Adjunta una captura pero se ve borrosa.",
+    "category": "Redes y conectividad",
+    "priority": "Alta",
+    "status": "Pendiente",
+    "assignee_id": "S002",
+    "attachments": [
+      {"filename": "captura_borrosa.png", "path": "data/samples/captura_borrosa.png", "kind": "imagen", "analysis_summary": "Imagen borrosa: no se pudo leer el código ni el mensaje de error con certeza."}
+    ],
+    "comments": [],
+    "history": [
+      {"event_type": "CREATED", "old_value": null, "new_value": "Abierto", "actor_id": "U002", "timestamp": "2026-10-21T14:00:00"},
+      {"event_type": "FILE_ATTACHED", "old_value": null, "new_value": "captura_borrosa.png", "actor_id": "U002", "timestamp": "2026-10-21T14:01:00"},
+      {"event_type": "STATUS_CHANGED", "old_value": "Abierto", "new_value": "En revisión", "actor_id": "S002", "timestamp": "2026-10-21T15:00:00"},
+      {"event_type": "STATUS_CHANGED", "old_value": "En revisión", "new_value": "Pendiente", "actor_id": "S002", "timestamp": "2026-10-21T16:00:00"}
+    ]
+  },
+  {
+    "id": "TCK-1009",
+    "created_at": "2026-10-22T09:00:00",
+    "requester_id": "U003",
+    "title": "Consulta general sobre horarios de soporte",
+    "description": "Consulta general: ¿cuáles son los horarios de atención del soporte para urgencias fuera de horario?",
+    "category": "Otros",
+    "priority": "Baja",
+    "status": "Cerrado",
+    "assignee_id": "S001",
+    "attachments": [],
+    "comments": [
+      {"author_id": "S001", "text": "Se informó el horario de guardia. Sin más acciones.", "created_at": "2026-10-22T11:00:00"}
+    ],
+    "history": [
+      {"event_type": "CREATED", "old_value": null, "new_value": "Abierto", "actor_id": "U003", "timestamp": "2026-10-22T09:00:00"},
+      {"event_type": "STATUS_CHANGED", "old_value": "Abierto", "new_value": "En revisión", "actor_id": "S001", "timestamp": "2026-10-22T09:30:00"},
+      {"event_type": "STATUS_CHANGED", "old_value": "En revisión", "new_value": "En progreso", "actor_id": "S001", "timestamp": "2026-10-22T10:00:00"},
+      {"event_type": "COMMENT_ADDED", "old_value": null, "new_value": "Se informó el horario de guardia. Sin más acciones.", "actor_id": "S001", "timestamp": "2026-10-22T11:00:00"},
+      {"event_type": "STATUS_CHANGED", "old_value": "En progreso", "new_value": "Resuelto", "actor_id": "S001", "timestamp": "2026-10-22T11:05:00"},
+      {"event_type": "STATUS_CHANGED", "old_value": "Resuelto", "new_value": "Cerrado", "actor_id": "A001", "timestamp": "2026-10-22T12:00:00"}
+    ]
+  },
+  {
+    "id": "TCK-1010",
+    "created_at": "2026-10-23T13:00:00",
+    "requester_id": "U001",
+    "title": "No puedo instalar la actualización del antivirus",
+    "description": "Al instalar la actualización aparece un error y se cancela. Ya reintenté dos veces en el día.",
+    "category": "Software",
+    "priority": "Media",
+    "status": "En revisión",
+    "assignee_id": "S001",
+    "attachments": [],
+    "comments": [],
+    "history": [
+      {"event_type": "CREATED", "old_value": null, "new_value": "Abierto", "actor_id": "U001", "timestamp": "2026-10-23T13:00:00"},
+      {"event_type": "STATUS_CHANGED", "old_value": "Abierto", "new_value": "En revisión", "actor_id": "S001", "timestamp": "2026-10-23T15:00:00"}
+    ]
+  },
+  {
+    "id": "TCK-1011",
+    "created_at": "2026-10-26T09:30:00",
+    "requester_id": "U002",
+    "title": "Teclado roto en puesto de Ventas",
+    "description": "Varias teclas no responden y el teclado hace ruido al presionarlas. Falla física evidente.",
+    "category": "Hardware",
+    "priority": "Alta",
+    "status": "Resuelto",
+    "assignee_id": "S002",
+    "attachments": [],
+    "comments": [
+      {"author_id": "S002", "text": "Se reemplazó el teclado y se verificó el funcionamiento.", "created_at": "2026-10-26T13:00:00"}
+    ],
+    "history": [
+      {"event_type": "CREATED", "old_value": null, "new_value": "Abierto", "actor_id": "U002", "timestamp": "2026-10-26T09:30:00"},
+      {"event_type": "STATUS_CHANGED", "old_value": "Abierto", "new_value": "En revisión", "actor_id": "S002", "timestamp": "2026-10-26T10:00:00"},
+      {"event_type": "STATUS_CHANGED", "old_value": "En revisión", "new_value": "En progreso", "actor_id": "S002", "timestamp": "2026-10-26T11:00:00"},
+      {"event_type": "COMMENT_ADDED", "old_value": null, "new_value": "Se reemplazó el teclado y se verificó el funcionamiento.", "actor_id": "S002", "timestamp": "2026-10-26T13:00:00"},
+      {"event_type": "STATUS_CHANGED", "old_value": "En progreso", "new_value": "Resuelto", "actor_id": "S002", "timestamp": "2026-10-26T13:05:00"}
+    ]
+  },
+  {
+    "id": "TCK-1012",
+    "created_at": "2026-10-27T16:00:00",
+    "requester_id": "U003",
+    "title": "Backup de servidor con errores intermitentes",
+    "description": "El backup nocturno termina con errores intermitentes desde hace tres días, aunque la copia parcial se genera.",
+    "category": "Infraestructura",
+    "priority": "Alta",
+    "status": "En revisión",
+    "assignee_id": "S002",
+    "attachments": [],
+    "comments": [],
+    "history": [
+      {"event_type": "CREATED", "old_value": null, "new_value": "Abierto", "actor_id": "U003", "timestamp": "2026-10-27T16:00:00"},
+      {"event_type": "STATUS_CHANGED", "old_value": "Abierto", "new_value": "En revisión", "actor_id": "S002", "timestamp": "2026-10-27T17:00:00"}
+    ]
+  },
+  {
+    "id": "TCK-1013",
+    "created_at": "2026-10-28T10:00:00",
+    "requester_id": "U001",
+    "title": "WiFi inestable en 2do piso",
+    "description": "La señal de WiFi del 2do piso se corta varias veces por hora y las videollamadas se interrumpen.",
+    "category": "Redes y conectividad",
+    "priority": "Media",
+    "status": "En progreso",
+    "assignee_id": "S002",
+    "attachments": [],
+    "comments": [],
+    "history": [
+      {"event_type": "CREATED", "old_value": null, "new_value": "Abierto", "actor_id": "U001", "timestamp": "2026-10-28T10:00:00"},
+      {"event_type": "STATUS_CHANGED", "old_value": "Abierto", "new_value": "En revisión", "actor_id": "S002", "timestamp": "2026-10-28T11:00:00"},
+      {"event_type": "STATUS_CHANGED", "old_value": "En revisión", "new_value": "En progreso", "actor_id": "S002", "timestamp": "2026-10-28T12:00:00"}
+    ]
+  }
+]

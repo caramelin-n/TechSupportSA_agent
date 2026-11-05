@@ -1,0 +1,6 @@
+[
+  {"name": "Baja", "definition": "Afecta a una persona, hay alternativa, no es urgente."},
+  {"name": "Media", "definition": "Afecta a una persona sin alternativa, o a pocas con alternativa."},
+  {"name": "Alta", "definition": "Afecta a un área o bloquea tareas importantes."},
+  {"name": "Crítica", "definition": "Servicio esencial caído para muchos usuarios y sin alternativa."}
+]

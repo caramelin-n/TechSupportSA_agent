@@ -1,0 +1,8 @@
+[
+  {"id": "U001", "name": "Lucía Benítez", "email": "lucia.benitez@cliente-demo.com", "role": "usuario", "area": "Facturación"},
+  {"id": "U002", "name": "Martín Ojeda", "email": "martin.ojeda@cliente-demo.com", "role": "usuario", "area": "Ventas"},
+  {"id": "U003", "name": "Carla Duarte", "email": "carla.duarte@cliente-demo.com", "role": "usuario", "area": "Administración"},
+  {"id": "S001", "name": "Diego Salinas", "email": "diego.salinas@techsupport-demo.com", "role": "soporte", "area": "Soporte N1"},
+  {"id": "S002", "name": "Paula Romero", "email": "paula.romero@techsupport-demo.com", "role": "soporte", "area": "Redes"},
+  {"id": "A001", "name": "Raúl Giménez", "email": "raul.gimenez@techsupport-demo.com", "role": "admin", "area": "Jefatura"}
+]

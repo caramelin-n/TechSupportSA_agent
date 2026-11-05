@@ -1,0 +1,9 @@
+[
+  {"name": "Hardware", "description": "Fallas físicas de equipos", "examples": ["monitor sin imagen", "teclado roto", "disco que hace ruido"]},
+  {"name": "Software", "description": "Programas instalados en el equipo", "examples": ["Office no abre", "error al instalar un programa"]},
+  {"name": "Redes y conectividad", "description": "Internet, WiFi, VPN", "examples": ["sin internet", "VPN no conecta"]},
+  {"name": "Sistemas y aplicaciones", "description": "Sistemas internos de la organización", "examples": ["error en el sistema de facturación"]},
+  {"name": "Accesos y permisos", "description": "Cuentas, contraseñas, permisos", "examples": ["usuario bloqueado", "no puedo entrar a la carpeta compartida"]},
+  {"name": "Infraestructura", "description": "Servidores, backups, servicios centrales", "examples": ["servidor caído", "backup fallido"]},
+  {"name": "Otros", "description": "Lo que no encaja en las anteriores", "examples": ["consulta general"]}
+]
