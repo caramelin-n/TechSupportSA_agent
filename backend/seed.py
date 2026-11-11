@@ -1,4 +1,4 @@
-"""Carga idempotente de los datos ficticios (instructions.md §13.6).
+"""Carga idempotente de los datos ficticios en PostgreSQL.
 
 Uso: python seed.py
 Vacía las tablas y recarga desde data/seed/*.json, así la demo siempre
@@ -13,7 +13,16 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 
-from src.db import connect, init_db  # noqa: E402
+from src.db import SessionLocal  # noqa: E402
+from src.models import (  # noqa: E402
+    Attachment,
+    Category,
+    Comment,
+    HistoryEvent,
+    Priority,
+    Ticket,
+    User,
+)
 
 SEED = ROOT / "data" / "seed"
 
@@ -23,59 +32,84 @@ def _load(name: str):
 
 
 def main() -> None:
-    init_db()
-    conn = connect()
+    session = SessionLocal()
     try:
-        with conn:
-            conn.execute("DELETE FROM history")
-            conn.execute("DELETE FROM comments")
-            conn.execute("DELETE FROM attachments")
-            conn.execute("DELETE FROM tickets")
-            conn.execute("DELETE FROM users")
+        # Borrado en orden seguro por FKs.
+        session.query(HistoryEvent).delete()
+        session.query(Comment).delete()
+        session.query(Attachment).delete()
+        session.query(Ticket).delete()
+        session.query(User).delete()
+        session.query(Category).delete()
+        session.query(Priority).delete()
+        session.commit()
 
-            users = _load("users.json")
-            conn.executemany(
-                "INSERT INTO users(id, name, email, role, area) VALUES (?, ?, ?, ?, ?)",
-                [(u["id"], u["name"], u["email"], u["role"], u["area"]) for u in users],
-            )
+        for c in _load("categories.json"):
+            session.add(Category(name=c["name"], description=c.get("description"), examples=c.get("examples")))
+        for p in _load("priorities.json"):
+            session.add(Priority(name=p["name"], definition=p.get("definition")))
+        session.flush()
 
-            tickets = _load("tickets_historicos.json")
-            for t in tickets:
-                conn.execute(
-                    "INSERT INTO tickets(id, created_at, requester_id, title, description,"
-                    " category, priority, status, assignee_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                    (t["id"], t["created_at"], t["requester_id"], t["title"], t["description"],
-                     t["category"], t["priority"], t["status"], t.get("assignee_id")),
-                )
-                for a in t.get("attachments") or []:
-                    conn.execute(
-                        "INSERT INTO attachments(ticket_id, filename, path, kind,"
-                        " analysis_summary, added_at, added_by) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                        (t["id"], a["filename"], a["path"], a["kind"],
-                         a.get("analysis_summary"), t["created_at"], t["requester_id"]),
-                    )
-                for c in t.get("comments") or []:
-                    conn.execute(
-                        "INSERT INTO comments(ticket_id, author_id, text, created_at)"
-                        " VALUES (?, ?, ?, ?)",
-                        (t["id"], c["author_id"], c["text"], c["created_at"]),
-                    )
-                for h in t.get("history") or []:
-                    conn.execute(
-                        "INSERT INTO history(ticket_id, event_type, old_value, new_value,"
-                        " actor_id, timestamp) VALUES (?, ?, ?, ?, ?, ?)",
-                        (t["id"], h["event_type"], h.get("old_value"), h.get("new_value"),
-                         h["actor_id"], h["timestamp"]),
-                    )
-        n_users = conn.execute("SELECT COUNT(*) FROM users").fetchone()[0]
-        n_tickets = conn.execute("SELECT COUNT(*) FROM tickets").fetchone()[0]
-        n_history = conn.execute("SELECT COUNT(*) FROM history").fetchone()[0]
-        n_attach = conn.execute("SELECT COUNT(*) FROM attachments").fetchone()[0]
-        n_comments = conn.execute("SELECT COUNT(*) FROM comments").fetchone()[0]
+        for u in _load("users.json"):
+            session.add(User(id=u["id"], name=u["name"], email=u["email"], role=u["role"], area=u["area"]))
+        session.flush()
+
+        tickets = _load("tickets_historicos.json")
+        for t in tickets:
+            session.add(Ticket(
+                id=t["id"],
+                created_at=t["created_at"],
+                requester_id=t["requester_id"],
+                title=t["title"],
+                description=t["description"],
+                category=t["category"],
+                priority=t["priority"],
+                status=t["status"],
+                assignee_id=t.get("assignee_id"),
+            ))
+        session.flush()  # asegura que existan los tickets antes de los hijos
+
+        for t in tickets:
+            for a in t.get("attachments") or []:
+                session.add(Attachment(
+                    ticket_id=t["id"],
+                    filename=a["filename"],
+                    path=a["path"],
+                    kind=a["kind"],
+                    analysis_summary=a.get("analysis_summary"),
+                    added_at=t["created_at"],
+                    added_by=t["requester_id"],
+                ))
+            for c in t.get("comments") or []:
+                session.add(Comment(
+                    ticket_id=t["id"],
+                    author_id=c["author_id"],
+                    text=c["text"],
+                    created_at=c["created_at"],
+                ))
+            for h in t.get("history") or []:
+                session.add(HistoryEvent(
+                    ticket_id=t["id"],
+                    event_type=h["event_type"],
+                    old_value=h.get("old_value"),
+                    new_value=h.get("new_value"),
+                    actor_id=h["actor_id"],
+                    timestamp=h["timestamp"],
+                ))
+        session.commit()
+
+        n_users = session.query(User).count()
+        n_tickets = session.query(Ticket).count()
+        n_history = session.query(HistoryEvent).count()
+        n_attach = session.query(Attachment).count()
+        n_comments = session.query(Comment).count()
+        n_cats = session.query(Category).count()
+        n_prios = session.query(Priority).count()
         print(f"Cargados: {n_users} usuarios, {n_tickets} tickets, "
+              f"{n_cats} categorias, {n_prios} prioridades, "
               f"{n_attach} adjuntos, {n_comments} comentarios, {n_history} eventos de historial.")
     finally:
-        conn.close()
+        session.close()
 
 
 if __name__ == "__main__":
