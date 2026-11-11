@@ -13,6 +13,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 
+from src.core.security import hash_password  # noqa: E402
 from src.db import SessionLocal  # noqa: E402
 from src.models import (  # noqa: E402
     Attachment,
@@ -51,7 +52,14 @@ def main() -> None:
         session.flush()
 
         for u in _load("users.json"):
-            session.add(User(id=u["id"], name=u["name"], email=u["email"], role=u["role"], area=u["area"]))
+            session.add(User(
+                id=u["id"],
+                name=u["name"],
+                email=u["email"],
+                password_hash=hash_password("techsupport123"),
+                role=u["role"],
+                area=u["area"],
+            ))
         session.flush()
 
         tickets = _load("tickets_historicos.json")

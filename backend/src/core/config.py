@@ -6,7 +6,6 @@ from pathlib import Path
 from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-# .env en la raíz del repo; si no existe (contenedor), se ignora.
 ENV_FILE = Path(__file__).resolve().parents[2] / ".env"
 
 
@@ -14,12 +13,21 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=ENV_FILE, extra="ignore")
 
     database_url: str
+    secret_key: str
+    access_token_expire_minutes: int = 60
 
     @field_validator("database_url")
     @classmethod
     def _validate_database_url(cls, value: str) -> str:
         if not value.startswith("postgresql"):
             raise ValueError("DATABASE_URL debe empezar con postgresql")
+        return value
+
+    @field_validator("secret_key")
+    @classmethod
+    def _validate_secret_key(cls, value: str) -> str:
+        if len(value) < 16:
+            raise ValueError("SECRET_KEY debe tener al menos 16 caracteres")
         return value
 
 
