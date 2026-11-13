@@ -6,7 +6,7 @@
 
 ### 1.1 Qué hace hoy
 
-El backend expone una API REST para gestión de tickets de soporte con autenticación JWT y control de acceso por roles. Está **completo en la fase CRUD/tools**:
+El backend expone una API REST para gestión de tickets de soporte con autenticación JWT y control de acceso por roles. Está **completo en la fase CRUD/tools** y **tiene el agente conversacional (texto)**:
 
 - Auth con email+password, emisión de JWT HS256.
 - CRUD de tickets con filtros y paginación.
@@ -14,8 +14,11 @@ El backend expone una API REST para gestión de tickets de soporte con autentica
 - Comentarios e historial de eventos.
 - Resumen de incidencias por estado/categoría/prioridad.
 - Gestión de usuarios (lectura).
+- Agente de chat (`POST /chat`) con function calling y memoria entre turnos.
 
-**Pendiente (fase agente):** RAG, `buscar_tickets_similares` con pgvector, function calling, multimodal (imágenes/logs), endpoint de chat. **Pendiente (frontend):** la UI es solo un scaffold que consulta `/api/health`.
+**Pendiente (RAG):** `ticket_embeddings` + pgvector, `buscar_tickets_similares` para detectar duplicados semánticamente.
+**Pendiente (multimodal):** entrada de imágenes/logs en `/chat`.
+**Pendiente (frontend):** la UI es solo un scaffold que consulta `/api/health`.
 
 ### 1.2 Stack y decisiones
 
@@ -191,9 +194,38 @@ Cerrado → (terminal)
 | PATCH | `/tickets/{id}/priority` | admin |
 | PATCH | `/tickets/{id}/assignee` | soporte |
 | POST | `/tickets/{id}/comments` | lector |
+| POST | `/chat` | autenticado |
 | GET | `/health`, `/health/db` | público |
 
 Filtros en `GET /tickets`: `status`, `category`, `priority`, `requester_id`, `limit`, `offset`.
+
+### 6.1 Agente (`POST /chat`)
+
+Endpoint de chat con memoria conversacional. Recibe
+`{"message": str, "conversation_id": str | null}` y devuelve
+`{"reply": str, "conversation_id": str}`. Si no se envía `conversation_id`, se
+genera uno y se devuelve para continuar la conversación.
+
+Flujo:
+
+1. `get_current_user` autentica por JWT.
+2. `run_agent(user_id, conversation_id, message)` invoca el agente.
+3. El agente (`create_agent` de LangChain 1.x sobre LangGraph) elige tools.
+4. Cada tool recibe `ToolRuntime[AgentContext]` con el `user_id` real, abre su
+   propia sesión y llama a `ticket_service`. Los permisos siguen vigentes.
+5. La memoria vive en un `InMemorySaver` con
+   `thread_id = "{user_id}:{conversation_id}"`.
+
+Herramientas expuestas: `crear_ticket`, `consultar_ticket`, `buscar_tickets`,
+`actualizar_estado`, `actualizar_prioridad`, `asignar_ticket`,
+`agregar_comentario`, `consultar_historial`, `resumen_incidencias`,
+`listar_usuarios`.
+
+Errores de dominio y de validación se devuelven como `"Error: ..."` para que el
+LLM los explique; nunca se propaga una excepción al modelo.
+
+Pendiente: detección semántica de duplicados (`ticket_embeddings` + pgvector) y
+entrada multimodal (imágenes/logs).
 
 ## 7. Datos y migraciones
 

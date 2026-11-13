@@ -22,6 +22,8 @@ services:
       DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:?}:${POSTGRES_PASSWORD:?}@db:5432/${POSTGRES_DB:?}
       SECRET_KEY: ${SECRET_KEY:?}
       ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-60}
+      # Opcional: sin key el CRUD funciona; solo falla el agente/embeddings.
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY:-}
     depends_on:
       db:
         condition: service_healthy

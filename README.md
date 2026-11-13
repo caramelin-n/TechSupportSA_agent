@@ -28,6 +28,25 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml exec backend alem
 docker compose -f docker-compose.yml -f docker-compose.dev.yml run --rm frontend-build
 ```
 
+## Agente
+
+`POST /chat` (JWT) mantiene conversación por `conversation_id` y usa las
+herramientas del backend (crear/consultar/actualizar tickets, historial,
+resumen). Requiere `GOOGLE_API_KEY` en `.env`; sin ella el CRUD sigue
+funcionando pero el agente responde error.
+
+```bash
+TOKEN=$(curl -s -X POST localhost:8000/auth/login -H 'Content-Type: application/json' \
+  -d '{"email":"raul.gimenez@techsupport-demo.com","password":"techsupport123"}' | jq -r .access_token)
+
+curl -s -X POST localhost:8000/chat -H "Authorization: Bearer $TOKEN" \
+  -H 'Content-Type: application/json' \
+  -d '{"message":"La impresora del 2do piso no responde","conversation_id":"demo-1"}'
+```
+
+Pendiente: detección semántica de duplicados (pgvector) y entrada multimodal
+(imágenes/logs).
+
 ## Documentación
 
 - [docs/backend-overview.md](docs/backend-overview.md) — explicación de la arquitectura, auth, permisos, estados, endpoints y deploy.
