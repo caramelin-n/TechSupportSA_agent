@@ -17,6 +17,9 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 60
     # Opcional: el CRUD funciona sin ella; solo el agente/RAG la requieren.
     google_api_key: str = ""
+    # Modelo de chat del agente. `gemini-2.5-flash` en free tier da ~20
+    # requests/día; `gemini-2.5-flash-lite` da ~200.
+    llm_model: str = "gemini-2.5-flash-lite"
 
     @field_validator("database_url")
     @classmethod

@@ -10,8 +10,6 @@ from src.agent.prompts import SYSTEM_PROMPT
 from src.agent.tools import TOOLS, AgentContext
 from src.core.config import settings
 
-LLM_MODEL = "gemini-2.5-flash"
-
 # Memoria en proceso: sobrevive entre turnos, se pierde al reiniciar el
 # contenedor. Para persistencia real, cambiar por AsyncPostgresSaver.
 _checkpointer = InMemorySaver()
@@ -31,7 +29,7 @@ def get_agent():
                 "GOOGLE_API_KEY no configurada: el agente no puede inicializarse"
             )
         llm = ChatGoogleGenerativeAI(
-            model=LLM_MODEL,
+            model=settings.llm_model,
             temperature=0.2,
             max_retries=2,
         )

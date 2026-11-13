@@ -72,3 +72,54 @@ def test_chat_rechaza_mensaje_vacio(client):
         headers={"Authorization": f"Bearer {tok}"},
     )
     assert r.status_code == 422
+
+
+def test_chat_traduce_cuota_agotada_a_503(client):
+    """Un 429 del proveedor no debe salir como 500 vacio."""
+    from src.main import app
+
+    async def boom(user_id, conversation_id, content):
+        raise RuntimeError("429 RESOURCE_EXHAUSTED: quota exceeded")
+
+    _override(app, boom)
+    tok = _token(client)
+    r = client.post(
+        "/chat",
+        json={"message": "hola"},
+        headers={"Authorization": f"Bearer {tok}"},
+    )
+    assert r.status_code == 503
+    assert "cuota" in r.json()["detail"].lower()
+
+
+def test_chat_traduce_falta_de_api_key_a_503(client):
+    from src.main import app
+
+    async def boom(user_id, conversation_id, content):
+        raise RuntimeError("GOOGLE_API_KEY no configurada: el agente no puede inicializarse")
+
+    _override(app, boom)
+    tok = _token(client)
+    r = client.post(
+        "/chat",
+        json={"message": "hola"},
+        headers={"Authorization": f"Bearer {tok}"},
+    )
+    assert r.status_code == 503
+    assert "GOOGLE_API_KEY" in r.json()["detail"]
+
+
+def test_chat_error_generico_devuelve_502(client):
+    from src.main import app
+
+    async def boom(user_id, conversation_id, content):
+        raise ValueError("algo raro")
+
+    _override(app, boom)
+    tok = _token(client)
+    r = client.post(
+        "/chat",
+        json={"message": "hola"},
+        headers={"Authorization": f"Bearer {tok}"},
+    )
+    assert r.status_code == 502
