@@ -2,18 +2,31 @@
 
 Agente de tickets (CRUD + auth JWT hoy; RAG + function calling pendiente). La spec funcional completa está en `instructions.md` (local, gitignored).
 
-## Arranque
+## Todo corre en Docker
+
+El host no ejecuta nada de la app: no hay Python, Node, pytest ni alembic en el host.
 
 ```bash
 cp .env.example .env
-docker compose up --build
-docker compose exec backend python seed.py
-docker compose exec backend python -m pytest -q
+
+# Desarrollo (bind-mount + live reload)
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build
+
+# Producción (imágenes construidas, nginx estático)
+docker compose up -d --build
 ```
 
-Login demo: `raul.gimenez@techsupport-demo.com` / `techsupport123` (todos los usuarios comparten esa password).
+Backend en `:8000`, frontend nginx en `:8080`. Login demo: `raul.gimenez@techsupport-demo.com` / `techsupport123` (todos los usuarios comparten esa password).
 
-Verificación: `curl localhost:8000/health` (backend), `curl localhost:8080/api/health` (nginx proxy).
+```bash
+# seed, tests y migraciones (dentro del contenedor)
+docker compose -f docker-compose.yml -f docker-compose.dev.yml exec backend python seed.py
+docker compose -f docker-compose.yml -f docker-compose.dev.yml exec backend python -m pytest -q
+docker compose -f docker-compose.yml -f docker-compose.dev.yml exec backend alembic upgrade head
+
+# rebuild del frontend
+docker compose -f docker-compose.yml -f docker-compose.dev.yml run --rm frontend-build
+```
 
 ## Documentación
 

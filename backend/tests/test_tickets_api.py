@@ -52,3 +52,22 @@ def test_user_cannot_see_other_user_ticket(client):
     other_tok = _token(client, other)
     r = client.get(f"/tickets/{tid}", headers={"Authorization": f"Bearer {other_tok}"})
     assert r.status_code == 403
+
+
+def test_filtro_status_valido_acepta_valores_en_espanol(client):
+    tok = _token(client, ADMIN)
+    r = client.get("/tickets", params={"status": "En revisión"}, headers={"Authorization": f"Bearer {tok}"})
+    assert r.status_code == 200
+
+
+def test_filtro_status_invalido_devuelve_422(client):
+    """Un status desconocido debe ser 422 (validacion), no 500 (error interno)."""
+    tok = _token(client, ADMIN)
+    r = client.get("/tickets", params={"status": "INVALID"}, headers={"Authorization": f"Bearer {tok}"})
+    assert r.status_code == 422
+
+
+def test_filtro_prioridad_invalido_devuelve_422(client):
+    tok = _token(client, ADMIN)
+    r = client.get("/tickets", params={"priority": "NOPE"}, headers={"Authorization": f"Bearer {tok}"})
+    assert r.status_code == 422

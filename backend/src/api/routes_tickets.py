@@ -9,6 +9,8 @@ from src.schemas.ticket import (
     CommentCreate,
     CommentResponse,
     IncidentSummary,
+    Priority,
+    Status,
     TicketAssign,
     TicketCreate,
     TicketFilters,
@@ -36,21 +38,19 @@ def create(payload: TicketCreate, current_user=Depends(get_current_user), db: Se
 
 @router.get("", response_model=list[TicketResponse])
 def search(
-    status: str | None = Query(default=None),
+    status: Status | None = Query(default=None),
     category: str | None = Query(default=None),
-    priority: str | None = Query(default=None),
+    priority: Priority | None = Query(default=None),
     requester_id: str | None = Query(default=None),
     limit: int = Query(default=50, ge=1, le=200),
     offset: int = Query(default=0, ge=0),
     current_user=Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    from src.schemas.ticket import Priority, Status
-
     filters = TicketFilters(
-        status=Status(status) if status else None,
+        status=status,
         category=category,
-        priority=Priority(priority) if priority else None,
+        priority=priority,
         requester_id=requester_id,
         limit=limit,
         offset=offset,

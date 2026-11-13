@@ -1,0 +1,49 @@
+# Override de DESARROLLO. El `docker-compose.yml` base queda intacto y representa
+# el despliegue de produccion (imagenes construidas, sin bind-mount).
+#
+# Uso:
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build
+#
+# Diferencias con produccion:
+#   - backend: source bind-mounted + uvicorn --reload (live reload)
+#   - frontend: nginx sirve el build estatico desde ./frontend/dist
+#
+# Requisitos:
+#   - Los permisos de los archivos del host se aplican al contenedor. Por eso el
+#     entrypoint se invoca con `sh` y no directamente (entrypoint.sh esta en 644
+#     en git; el `chmod +x` del Dockerfile se pierde al bindear).
+#   - Para recompilar el frontend: `docker compose run --rm frontend-build`
+
+services:
+  backend:
+    volumes:
+      - ./backend:/app
+    entrypoint: ["sh", "./entrypoint.sh"]
+    command:
+      - uvicorn
+      - src.main:app
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8000"
+      - --reload
+
+  frontend:
+    volumes:
+      - ./frontend/dist:/usr/share/nginx/html:ro
+
+  # Servicio one-shot: compila el frontend dentro de Docker y vuelca el resultado
+  # en ./frontend/dist (host), que nginx sirve. No se levanta con `up`.
+  #
+  # Usa `npm ci` (NO `npm install`): npm install reescribe package-lock.json y lo
+  # deja modificado en el host (la version de npm del contenedor no coincide con
+  # la del host). npm ci instala desde el lockfile sin tocarlo.
+  frontend-build:
+    profiles: ["build"]
+    build:
+      context: ./frontend
+      target: build
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    command: ["sh", "-c", "npm ci && npm run build"]
