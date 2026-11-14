@@ -59,7 +59,14 @@ Para mandar capturas, fotos o logs: `POST /chat/upload` (multipart) devuelve
 un id por archivo, y `POST /chat` los recibe en `upload_ids`. Ver
 [docs/backend-overview.md](docs/backend-overview.md#62-adjuntos-f02).
 
-Pendiente: detección semántica de duplicados (pgvector).
+Para detectar tickets duplicados, los tickets del seed necesitan sus
+embeddings (requiere `GOOGLE_API_KEY`):
+
+```bash
+docker compose exec backend python scripts/indexar_tickets.py
+```
+
+Ver [docs/backend-overview.md](docs/backend-overview.md#63-tickets-duplicados-criterio-10).
 
 ## Documentación
 

@@ -30,6 +30,13 @@ class Settings(BaseSettings):
     # En Docker queda en /app/uploads, montado como volumen.
     upload_dir: str = str(Path(__file__).resolve().parents[2] / "uploads")
     max_upload_mb: int = 5
+    # Detección de duplicados (criterio 10). El modelo genera vectores de
+    # 1536 dimensiones, el tamaño de la columna `ticket_embeddings.embedding`.
+    embedding_model: str = "gemini-embedding-001"
+    # Distancia coseno máxima (0 = idénticos, 1 = sin relación) para considerar
+    # que dos tickets pueden ser la misma incidencia. Calibrala con
+    # `python -m scripts.indexar_tickets --calibrar`.
+    duplicate_max_distance: float = 0.20
 
     @property
     def checkpoint_db_url(self) -> str:

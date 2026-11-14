@@ -4,7 +4,7 @@ from __future__ import annotations
 from datetime import datetime
 
 from pgvector.sqlalchemy import Vector
-from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, UniqueConstraint
+from sqlalchemy import DateTime, ForeignKey, Index, Integer, String, Text, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
@@ -56,6 +56,30 @@ class Attachment(Base):
     analysis_summary: Mapped[str | None] = mapped_column(Text, nullable=True)
     added_at: Mapped[str] = mapped_column(Text, nullable=False)
     added_by: Mapped[str] = mapped_column(Text, ForeignKey("users.id"), nullable=False)
+
+
+class TicketEmbedding(Base):
+    """Vector semántico de un ticket (título + categoría + descripción).
+
+    Sirve para encontrar tickets abiertos que describen la misma incidencia.
+    """
+
+    __tablename__ = "ticket_embeddings"
+    __table_args__ = (
+        Index(
+            "ix_ticket_embeddings_hnsw",
+            "embedding",
+            postgresql_using="hnsw",
+            postgresql_ops={"embedding": "vector_cosine_ops"},
+        ),
+    )
+
+    ticket_id: Mapped[str] = mapped_column(
+        Text, ForeignKey("tickets.id", ondelete="CASCADE"), primary_key=True
+    )
+    embedding: Mapped[list] = mapped_column(Vector(1536), nullable=False)
+    model: Mapped[str] = mapped_column(Text, nullable=False)
+    updated_at: Mapped[str] = mapped_column(Text, nullable=False)
 
 
 class Upload(Base):

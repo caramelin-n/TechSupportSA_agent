@@ -16,7 +16,6 @@ El backend expone una API REST para gestión de tickets de soporte con autentica
 - Gestión de usuarios (lectura).
 - Agente de chat (`POST /chat`) con function calling y memoria entre turnos.
 
-**Pendiente (RAG):** `ticket_embeddings` + pgvector, `buscar_tickets_similares` para detectar duplicados semánticamente.
 **Pendiente (frontend):** la UI es solo un scaffold que consulta `/api/health`.
 
 ### 1.2 Stack y decisiones
@@ -254,13 +253,11 @@ modelo que no pida confirmación por texto para evitar la doble pregunta.
 
 Herramientas expuestas: `crear_ticket`, `consultar_ticket`, `buscar_tickets`,
 `actualizar_estado`, `actualizar_prioridad`, `asignar_ticket`,
-`agregar_comentario`, `adjuntar_archivo`, `consultar_historial`,
-`resumen_incidencias`, `listar_usuarios`.
+`buscar_tickets_similares`, `agregar_comentario`, `adjuntar_archivo`,
+`consultar_historial`, `resumen_incidencias`, `listar_usuarios`.
 
 Errores de dominio y de validación se devuelven como `"Error: ..."` para que el
 LLM los explique; nunca se propaga una excepción al modelo.
-
-Pendiente: detección semántica de duplicados (`ticket_embeddings` + pgvector).
 
 ### 6.2 Adjuntos (F02)
 
@@ -308,11 +305,48 @@ usuario, lo copian a `attachments` con el resumen del análisis y registran
 `FILE_ATTACHED` en el historial. La descripción de la confirmación de
 `crear_ticket` indica cuántos adjuntos lleva.
 
+### 6.3 Tickets duplicados (criterio 10)
+
+Cada ticket tiene un vector en `ticket_embeddings` (título + categoría +
+descripción, `gemini-embedding-001` a 1536 dimensiones, índice HNSW coseno).
+Dos tickets que describen la misma incidencia con otras palabras quedan cerca.
+
+- **`buscar_tickets_similares(descripcion)`**: herramienta de consulta (sin
+  confirmación) que el prompt indica usar antes de crear. Devuelve hasta 3
+  tickets con su porcentaje de parecido.
+- **Chequeo dentro de `crear_ticket`** (impuesto por código): antes de crear,
+  busca tickets parecidos. Si hay alguno a distancia ≤
+  `DUPLICATE_MAX_DISTANCE`, **no crea nada** y devuelve los candidatos para que
+  el modelo pregunte. Si el usuario dice que es otra incidencia, el modelo
+  vuelve a llamar con `confirmar_duplicado=true`, y la confirmación se lo
+  muestra al usuario («Se parece a un ticket existente, pero indicaste que es
+  otra incidencia»).
+- Solo se comparan tickets **no resueltos ni cerrados** y que el usuario puede
+  ver (un usuario, contra los suyos; soporte y admin, contra todos).
+- Si la API de embeddings falla o no hay `GOOGLE_API_KEY`, el ticket se crea
+  igual y la respuesta avisa que no se pudo verificar duplicados.
+
+Los tickets del seed no tienen vector. Después de `seed.py` hay que indexarlos
+(una llamada a la API cada 50 tickets):
+
+```bash
+docker compose exec backend python scripts/indexar_tickets.py
+docker compose exec backend python scripts/indexar_tickets.py --calibrar
+```
+
+`--calibrar` muestra, para cada ticket, su vecino más cercano y la distancia.
+Con eso se ajusta `DUPLICATE_MAX_DISTANCE` (0.20 por defecto): los pares del
+seed que son la misma incidencia (TCK-1001/1007, TCK-1006/1012,
+TCK-1002/1013) tienen que quedar por debajo y el resto por encima.
+
+En los tests, un embedder falso y determinista (`tests/conftest.py`) reemplaza
+a Gemini, así que no se gasta cuota aunque haya `GOOGLE_API_KEY`.
+
 ## 7. Datos y migraciones
 
 ### 7.1 Esquema
 
-Tablas: `users`, `tickets`, `attachments`, `uploads`, `comments`, `history`, `categories`, `priorities`, `documentos_embeddings` (vector(1536)).
+Tablas: `users`, `tickets`, `ticket_embeddings` (vector(1536), HNSW), `attachments`, `uploads`, `comments`, `history`, `categories`, `priorities`, `documentos_embeddings` (vector(1536)).
 
 ### 7.2 Seed
 
@@ -320,7 +354,7 @@ Tablas: `users`, `tickets`, `attachments`, `uploads`, `comments`, `history`, `ca
 
 ### 7.3 Migraciones
 
-- `migrations/versions/`: `4f7693e83575_initial.py`, `c10c8b5597b8_add_user_password_hash.py`, `8d0bc44accd2_add_named_unique_users_email.py`, `e543c2461f61_add_uploads.py`.
+- `migrations/versions/`: `4f7693e83575_initial.py`, `c10c8b5597b8_add_user_password_hash.py`, `8d0bc44accd2_add_named_unique_users_email.py`, `e543c2461f61_add_uploads.py`, `7f1eadfa70d3_add_ticket_embeddings.py`.
 - `alembic.ini` tiene la URL vacía; `env.py` lee `settings.database_url`.
 - Para agregar una migración: `docker compose exec backend alembic revision --autogenerate -m "..."` y **rebuild** del backend (el Dockerfile copia el código en build).
 
@@ -334,6 +368,7 @@ Tablas: `users`, `tickets`, `attachments`, `uploads`, `comments`, `history`, `ca
 - Las imágenes que se mandan al chat quedan guardadas en base64 dentro del checkpoint (además del archivo en `UPLOAD_DIR`).
 - `uploads` no se limpia sola: los archivos que nunca se adjuntaron a un ticket quedan en disco.
 - `seed.py` borra `uploads` antes que `users` (FK); los archivos en disco no.
+- Al volver a correr `seed.py` se borran los vectores (`ON DELETE CASCADE`): hay que volver a correr `scripts/indexar_tickets.py`.
 - Ticket IDs `max+1` no son concurrency-safe (aceptado para demo).
 - `AGENTS.md` e `instructions.md` son local-only (gitignored).
 - Docstrings de `db.py`/`seed.py` citan `instructions.md §13.6/§14`, secciones que ya no existen.

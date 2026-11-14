@@ -9,6 +9,7 @@ contexto.
 """
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 from functools import wraps
 from typing import Callable
@@ -30,8 +31,10 @@ from src.schemas.ticket import (
     TicketPriorityUpdate,
     TicketStatusUpdate,
 )
-from src.services import ticket_service, upload_service, user_service
+from src.services import similarity_service, ticket_service, upload_service, user_service
 from src.services.exceptions import DomainError, Forbidden, NotFound
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -118,6 +121,15 @@ def _attachments_from_uploads(
     ]
 
 
+def _fmt_similares(similares: list[similarity_service.SimilarTicket]) -> str:
+    return "\n".join(
+        f"- {s.ticket.id} «{s.ticket.title}» ({s.ticket.status}, "
+        f"{s.ticket.category}, creado {s.ticket.created_at[:10]}; "
+        f"{s.similarity_pct} % parecido)"
+        for s in similares
+    )
+
+
 def _fmt_ticket(t: Ticket) -> str:
     assignee = t.assignee_id or "sin asignar"
     return (
@@ -140,6 +152,7 @@ def _crear_ticket_impl(
     category: str,
     priority: str,
     adjuntos: list[AdjuntoTicket] | None = None,
+    confirmar_duplicado: bool = False,
     session: Session | None = None,
 ) -> str:
     s = _session(session)
@@ -152,11 +165,63 @@ def _crear_ticket_impl(
             priority=_parse_priority(priority),
             attachments=_attachments_from_uploads(s, actor, adjuntos or []),
         )
+
+        # Chequeo de duplicados en código: el modelo no puede saltearlo, salvo
+        # que el usuario haya dicho que es otra incidencia (confirmar_duplicado).
+        vector = similarity_service.embed_one(
+            similarity_service.ticket_text(data.title, data.category, data.description)
+        )
+        if vector is not None and not confirmar_duplicado:
+            similares = similarity_service.find_similar(s, actor, vector)
+            if similares:
+                return (
+                    "No se creó el ticket: hay tickets abiertos que pueden ser la "
+                    "misma incidencia:\n"
+                    f"{_fmt_similares(similares)}\n"
+                    "Mostráselos al usuario y preguntale si es lo mismo. Si es lo "
+                    "mismo, ofrecé comentar o adjuntar en el existente. Si es otra "
+                    "incidencia, volvé a llamar a crear_ticket con "
+                    "confirmar_duplicado=true."
+                )
+
         t = ticket_service.create_ticket(s, actor, data)
         extra = f", {len(data.attachments)} adjunto(s)" if data.attachments else ""
-        return (
-            f"Ticket creado: {t.id} (estado {t.status}, prioridad {t.priority}{extra})."
-        )
+        msg = f"Ticket creado: {t.id} (estado {t.status}, prioridad {t.priority}{extra})."
+        if vector is None:
+            return msg + " Aviso: no se pudo verificar si había tickets duplicados."
+        try:
+            embedder = similarity_service.get_embedder()
+            similarity_service.store_embedding(s, t.id, vector, embedder.model)
+        except Exception:
+            # El ticket ya existe; sin su vector solo no aparece como duplicado.
+            logger.exception("No se pudo guardar el embedding de %s", t.id)
+            s.rollback()
+        return msg
+    finally:
+        if session is None:
+            s.close()
+
+
+@_safe
+def _buscar_similares_impl(
+    user_id: str,
+    descripcion: str,
+    *,
+    session: Session | None = None,
+) -> str:
+    s = _session(session)
+    try:
+        actor = _actor(s, user_id)
+        vector = similarity_service.embed_one(descripcion)
+        if vector is None:
+            return (
+                "Error: la búsqueda por similitud no está disponible en este "
+                "momento. Usá buscar_tickets con filtros."
+            )
+        similares = similarity_service.find_similar(s, actor, vector)
+        if not similares:
+            return "No hay tickets abiertos parecidos."
+        return f"Tickets abiertos parecidos:\n{_fmt_similares(similares)}"
     finally:
         if session is None:
             s.close()
@@ -369,10 +434,13 @@ def crear_ticket(
     priority: str,
     runtime: ToolRuntime[AgentContext],
     adjuntos: list[AdjuntoTicket] | None = None,
+    confirmar_duplicado: bool = False,
 ) -> str:
-    """Crea un ticket de soporte. Antes de usarla, descartá duplicados con
-    buscar_tickets. No pidas confirmación por texto: el sistema se la pide al
-    usuario antes de ejecutarla. `category` debe ser una de:
+    """Crea un ticket de soporte. Antes de usarla, buscá duplicados con
+    buscar_tickets_similares. Si encuentra tickets parecidos, no crea nada y
+    los devuelve. `confirmar_duplicado=true` solo cuando el usuario dijo que
+    es otra incidencia. No pidas confirmación por texto: el sistema se la pide
+    al usuario antes de ejecutarla. `category` debe ser una de:
     Hardware, Software, Redes y conectividad, Sistemas y aplicaciones,
     Accesos y permisos, Infraestructura, Otros. `priority`: Baja, Media, Alta,
     Crítica. Si el usuario mandó archivos en esta conversación, incluilos en
@@ -384,7 +452,16 @@ def crear_ticket(
         category=category,
         priority=priority,
         adjuntos=adjuntos,
+        confirmar_duplicado=confirmar_duplicado,
     )
+
+
+@tool
+def buscar_tickets_similares(descripcion: str, runtime: ToolRuntime[AgentContext]) -> str:
+    """Busca tickets abiertos que describan la misma incidencia, aunque usen
+    otras palabras. Pasale el problema en una o dos oraciones (qué falla, en
+    qué sistema o equipo, qué error aparece). Usala antes de crear un ticket."""
+    return _buscar_similares_impl(runtime.context.user_id, descripcion)
 
 
 @tool
@@ -488,6 +565,7 @@ TOOLS = [
     crear_ticket,
     consultar_ticket,
     buscar_tickets,
+    buscar_tickets_similares,
     actualizar_estado,
     actualizar_prioridad,
     asignar_ticket,

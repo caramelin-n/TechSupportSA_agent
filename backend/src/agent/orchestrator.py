@@ -141,6 +141,11 @@ _DESCRIPTIONS = {
         f"(categoría {a.get('category', '?')}, prioridad {a.get('priority', '?')}"
         + (f", {len(a['adjuntos'])} adjunto(s)" if a.get("adjuntos") else "")
         + ")"
+        + (
+            ". Se parece a un ticket existente, pero indicaste que es otra incidencia"
+            if a.get("confirmar_duplicado")
+            else ""
+        )
     ),
     "actualizar_estado": lambda a: (
         f"Cambiar el estado de {a.get('ticket_id', '?')} a «{a.get('nuevo_estado', '?')}»"
