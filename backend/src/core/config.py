@@ -1,7 +1,9 @@
 """Configuración tipada desde variables de entorno."""
 from __future__ import annotations
 
+import re
 from pathlib import Path
+from typing import Literal
 
 from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -20,6 +22,18 @@ class Settings(BaseSettings):
     # Modelo de chat del agente. `gemini-2.5-flash` en free tier da ~20
     # requests/día; `gemini-2.5-flash-lite` da ~200.
     llm_model: str = "gemini-2.5-flash-lite"
+    # Dónde guarda LangGraph las conversaciones (y las acciones pendientes de
+    # confirmación). `postgres` persiste entre reinicios; `memory` solo sirve
+    # para pruebas rápidas sin base.
+    checkpointer: Literal["postgres", "memory"] = "postgres"
+
+    @property
+    def checkpoint_db_url(self) -> str:
+        """`DATABASE_URL` sin el driver de SQLAlchemy (`+psycopg`).
+
+        psycopg acepta `postgresql://`, no `postgresql+psycopg://`.
+        """
+        return re.sub(r"^postgresql\+\w+://", "postgresql://", self.database_url)
 
     @field_validator("database_url")
     @classmethod

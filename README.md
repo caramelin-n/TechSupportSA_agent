@@ -44,6 +44,17 @@ curl -s -X POST localhost:8000/chat -H "Authorization: Bearer $TOKEN" \
   -d '{"message":"La impresora del 2do piso no responde","conversation_id":"demo-1"}'
 ```
 
+Crear tickets, cambiar estado o prioridad y asignar requieren confirmación: la
+respuesta trae `pending_actions` y se confirma con
+`POST /chat/{conversation_id}/decision` (`{"decision": "approve"}` o
+`{"decision": "reject", "message": "..."}`). Ver
+[docs/backend-overview.md](docs/backend-overview.md#61-agente-post-chat).
+
+```bash
+curl -s -X POST localhost:8000/chat/demo-1/decision -H "Authorization: Bearer $TOKEN" \
+  -H 'Content-Type: application/json' -d '{"decision":"approve"}'
+```
+
 Pendiente: detección semántica de duplicados (pgvector) y entrada multimodal
 (imágenes/logs).
 

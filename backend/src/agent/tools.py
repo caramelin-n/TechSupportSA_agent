@@ -313,7 +313,8 @@ def crear_ticket(
     runtime: ToolRuntime[AgentContext],
 ) -> str:
     """Crea un ticket de soporte. Antes de usarla, descartá duplicados con
-    buscar_tickets y pedí confirmación al usuario. `category` debe ser una de:
+    buscar_tickets. No pidas confirmación por texto: el sistema se la pide al
+    usuario antes de ejecutarla. `category` debe ser una de:
     Hardware, Software, Redes y conectividad, Sistemas y aplicaciones,
     Accesos y permisos, Infraestructura, Otros. `priority`: Baja, Media, Alta,
     Crítica."""

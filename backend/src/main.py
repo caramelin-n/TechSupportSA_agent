@@ -1,15 +1,29 @@
 """Entrypoint FastAPI — TechSupport S.A."""
 from __future__ import annotations
 
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 
+from src.agent.checkpointer import open_checkpointer
+from src.agent.orchestrator import set_checkpointer
 from src.api.routes_auth import router as auth_router
 from src.api.routes_chat import router as chat_router
 from src.api.routes_health import router as health_router
 from src.api.routes_tickets import router as tickets_router
 from src.api.routes_users import router as users_router
 
-app = FastAPI(title="TechSupport S.A. API")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # El checkpointer vive lo mismo que la app: abre el pool al arrancar y lo
+    # cierra al apagar.
+    async with open_checkpointer() as checkpointer:
+        set_checkpointer(checkpointer)
+        yield
+
+
+app = FastAPI(title="TechSupport S.A. API", lifespan=lifespan)
 
 app.include_router(health_router)
 app.include_router(auth_router)

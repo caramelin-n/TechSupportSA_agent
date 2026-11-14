@@ -195,6 +195,7 @@ Cerrado → (terminal)
 | PATCH | `/tickets/{id}/assignee` | soporte |
 | POST | `/tickets/{id}/comments` | lector |
 | POST | `/chat` | autenticado |
+| POST | `/chat/{conversation_id}/decision` | autenticado (solo su conversación) |
 | GET | `/health`, `/health/db` | público |
 
 Filtros en `GET /tickets`: `status`, `category`, `priority`, `requester_id`, `limit`, `offset`.
@@ -203,8 +204,9 @@ Filtros en `GET /tickets`: `status`, `category`, `priority`, `requester_id`, `li
 
 Endpoint de chat con memoria conversacional. Recibe
 `{"message": str, "conversation_id": str | null}` y devuelve
-`{"reply": str, "conversation_id": str}`. Si no se envía `conversation_id`, se
-genera uno y se devuelve para continuar la conversación.
+`{"reply": str, "conversation_id": str, "pending_actions": [...]}`. Si no se
+envía `conversation_id`, se genera uno y se devuelve para continuar la
+conversación.
 
 Flujo:
 
@@ -213,8 +215,42 @@ Flujo:
 3. El agente (`create_agent` de LangChain 1.x sobre LangGraph) elige tools.
 4. Cada tool recibe `ToolRuntime[AgentContext]` con el `user_id` real, abre su
    propia sesión y llama a `ticket_service`. Los permisos siguen vigentes.
-5. La memoria vive en un `InMemorySaver` con
-   `thread_id = "{user_id}:{conversation_id}"`.
+5. La memoria vive en Postgres (`AsyncPostgresSaver`, ver
+   `src/agent/checkpointer.py`) con `thread_id = "{user_id}:{conversation_id}"`,
+   así que sobrevive a reinicios del contenedor. El pool se abre en el
+   `lifespan` de FastAPI. Con `CHECKPOINTER=memory` usa memoria (solo pruebas).
+
+#### Confirmaciones (human in the loop)
+
+`crear_ticket`, `actualizar_estado`, `actualizar_prioridad` y `asignar_ticket`
+**no se ejecutan cuando el modelo las pide**: `HumanInTheLoopMiddleware` pausa
+el grafo y la respuesta trae la acción en `pending_actions`:
+
+```json
+{
+  "reply": "Antes de seguir necesito que confirmes:\n- Crear el ticket «...»",
+  "conversation_id": "demo-1",
+  "pending_actions": [
+    {"tool": "crear_ticket", "args": {"title": "...", "category": "Hardware", "priority": "Media", "description": "..."},
+     "description": "Crear el ticket «...» (categoría Hardware, prioridad Media)"}
+  ]
+}
+```
+
+El cliente responde con `POST /chat/{conversation_id}/decision`:
+
+- `{"decision": "approve"}` → se ejecuta la herramienta y el agente responde.
+- `{"decision": "reject", "message": "opcional"}` → no se ejecuta; el modelo
+  recibe el motivo y puede proponer otra cosa.
+
+La decisión aplica a todas las acciones pendientes del turno. Mientras haya una
+acción pendiente, `POST /chat` en esa conversación devuelve **409**; también
+devuelve 409 una decisión sin nada pendiente. Solo se permiten `approve` y
+`reject` (no `edit`), así el cliente no puede cambiar los argumentos. Aprobar
+no saltea permisos: la herramienta sigue validando el rol del usuario.
+
+La confirmación la impone el código, no el prompt: el prompt le indica al
+modelo que no pida confirmación por texto para evitar la doble pregunta.
 
 Herramientas expuestas: `crear_ticket`, `consultar_ticket`, `buscar_tickets`,
 `actualizar_estado`, `actualizar_prioridad`, `asignar_ticket`,
@@ -249,6 +285,8 @@ Tablas: `users`, `tickets`, `attachments`, `comments`, `history`, `categories`, 
 - `httpx` necesario para `TestClient`.
 - `buscar_tickets_similares` (pgvector) **no implementado** — fase agente.
 - Búsqueda de duplicados antes de crear ticket **no implementada** — fase agente.
+- Las tablas `checkpoint*` las crea LangGraph (`setup()`), no Alembic; `migrations/env.py` las excluye del autogenerate.
+- Las imágenes que se manden al chat quedarán guardadas en base64 dentro del checkpoint.
 - Ticket IDs `max+1` no son concurrency-safe (aceptado para demo).
 - `AGENTS.md` e `instructions.md` son local-only (gitignored).
 - Docstrings de `db.py`/`seed.py` citan `instructions.md §13.6/§14`, secciones que ya no existen.
