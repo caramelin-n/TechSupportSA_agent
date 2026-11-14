@@ -9,7 +9,7 @@
 El backend expone una API REST para gestión de tickets de soporte con autenticación JWT y control de acceso por roles. Está **completo en la fase CRUD/tools** y **tiene el agente conversacional (texto)**:
 
 - Auth con email+password, emisión de JWT HS256.
-- CRUD de tickets con filtros y paginación.
+- CRUD de tickets con filtros y paginación (`GET /tickets?unresolved=true` trae solo los que no están Resueltos ni Cerrados).
 - Máquina de estados estricta.
 - Comentarios e historial de eventos.
 - Resumen de incidencias por estado/categoría/prioridad.
@@ -160,7 +160,7 @@ Resuelto → Cerrado
 Cerrado → (terminal)
 ```
 
-- Transición inválida → `409 Conflict` (`InvalidTransition`).
+- Transición inválida → `409 Conflict` (`InvalidTransition`); el mensaje dice a qué estados se puede pasar desde el actual. El prompt le indica al agente no recorrer estados intermedios por su cuenta: explica y pregunta.
 - `Cerrado` solo por `admin` → `403` si no.
 - Cambio de estado por `usuario` → `403` (solo soporte/admin).
 

@@ -150,3 +150,20 @@ def test_usuario_inexistente(db_session):
     )
     assert out.startswith("Error:")
     assert "no encontrado" in out
+
+
+def test_transicion_invalida_dice_a_que_estados_se_puede_pasar(db_session):
+    # TCK-1002 está Abierto: solo puede pasar a En revisión.
+    res = t._actualizar_estado_impl(SOPORTE, "TCK-1002", "Resuelto", session=db_session)
+    assert res.startswith("Error: Transición inválida: Abierto -> Resuelto")
+    assert "solo se puede pasar a: En revisión" in res
+
+
+def test_buscar_sin_resolver(db_session):
+    # Críticas del seed: TCK-1002 (Abierto) y TCK-1006 (En progreso).
+    res = t._buscar_tickets_impl(SOPORTE, priority="Crítica", sin_resolver=True, session=db_session)
+    assert "TCK-1002" in res and "TCK-1006" in res
+
+    res = t._buscar_tickets_impl(SOPORTE, sin_resolver=True, session=db_session)
+    assert "Resuelto" not in res and "Cerrado" not in res
+    assert "TCK-1005" not in res  # Resuelto en el seed

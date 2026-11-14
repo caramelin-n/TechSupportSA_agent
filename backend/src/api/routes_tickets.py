@@ -42,6 +42,7 @@ def search(
     category: str | None = Query(default=None),
     priority: Priority | None = Query(default=None),
     requester_id: str | None = Query(default=None),
+    unresolved: bool = Query(default=False, description="Solo tickets sin resolver"),
     limit: int = Query(default=50, ge=1, le=200),
     offset: int = Query(default=0, ge=0),
     current_user=Depends(get_current_user),
@@ -52,6 +53,7 @@ def search(
         category=category,
         priority=priority,
         requester_id=requester_id,
+        unresolved=unresolved,
         limit=limit,
         offset=offset,
     )

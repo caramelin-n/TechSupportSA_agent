@@ -276,6 +276,7 @@ def _buscar_tickets_impl(
     category: str | None = None,
     priority: str | None = None,
     requester_id: str | None = None,
+    sin_resolver: bool = False,
     limite: int = 20,
     session: Session | None = None,
 ) -> str:
@@ -287,6 +288,7 @@ def _buscar_tickets_impl(
             category=category or None,
             priority=_parse_priority(priority) if priority else None,
             requester_id=requester_id or None,
+            unresolved=sin_resolver,
             limit=max(1, min(limite, 200)),
             offset=0,
         )
@@ -490,17 +492,21 @@ def buscar_tickets(
     category: str | None = None,
     priority: str | None = None,
     requester_id: str | None = None,
+    sin_resolver: bool = False,
     limite: int = 20,
 ) -> str:
     """Busca tickets. Todos los filtros son opcionales. `status` (Abierto,
     En revisión, En progreso, Pendiente, Resuelto, Cerrado) y `priority`
-    (Baja, Media, Alta, Crítica) usan el texto en español."""
+    (Baja, Media, Alta, Crítica) usan el texto en español. `sin_resolver=true`
+    trae todo lo que no está Resuelto ni Cerrado: usalo cuando pregunten por
+    tickets "pendientes", "abiertos" o "sin resolver" en sentido general."""
     return _buscar_tickets_impl(
         runtime.context.user_id,
         status=status,
         category=category,
         priority=priority,
         requester_id=requester_id,
+        sin_resolver=sin_resolver,
         limite=limite,
     )
 

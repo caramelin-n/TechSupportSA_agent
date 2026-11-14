@@ -71,3 +71,14 @@ def test_filtro_prioridad_invalido_devuelve_422(client):
     tok = _token(client, ADMIN)
     r = client.get("/tickets", params={"priority": "NOPE"}, headers={"Authorization": f"Bearer {tok}"})
     assert r.status_code == 422
+
+
+def test_buscar_sin_resolver_por_api(client):
+    tok = client.post(
+        "/auth/login",
+        json={"email": "diego.salinas@techsupport-demo.com", "password": "techsupport123"},
+    ).json()["access_token"]
+    r = client.get("/tickets", params={"unresolved": "true"}, headers={"Authorization": f"Bearer {tok}"})
+    assert r.status_code == 200
+    estados = {t["status"] for t in r.json()}
+    assert estados and not estados & {"Resuelto", "Cerrado"}
