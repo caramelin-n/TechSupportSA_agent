@@ -233,3 +233,18 @@ def test_decision_invalida_devuelve_422(client):
 def test_decision_requiere_token(client):
     r = client.post("/chat/c1/decision", json={"decision": "approve"})
     assert r.status_code == 401
+
+
+def test_modelo_no_disponible_explica_que_cambiar(client):
+    from src.main import app
+
+    class GoogleModelNotFoundError(Exception):
+        pass
+
+    async def fake(user_id, conversation_id, content):
+        raise GoogleModelNotFoundError("404 NOT_FOUND models/gemini-2.5-flash-lite")
+
+    _override(app, fake)
+    r = client.post("/chat", json={"message": "hola"}, headers=_auth(client))
+    assert r.status_code == 503
+    assert "LLM_MODEL" in r.json()["detail"]

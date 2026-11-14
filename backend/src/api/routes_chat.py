@@ -107,8 +107,17 @@ def _friendly_error(exc: Exception) -> HTTPException:
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail=(
                 "Cuota del modelo agotada. Cambiá LLM_MODEL en .env "
-                "(por ejemplo gemini-2.5-flash-lite) o esperá a que se renueve. "
+                "(por ejemplo gemini-3.5-flash-lite) o esperá a que se renueve. "
                 "Ver https://aistudio.google.com/docs/rate-limits"
+            ),
+        )
+    if "ModelNotFound" in name or "NOT_FOUND" in text:
+        return HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=(
+                f"El modelo '{settings.llm_model}' no está disponible para esta "
+                "GOOGLE_API_KEY (Google retira modelos viejos). Cambiá LLM_MODEL "
+                "en .env, por ejemplo a gemini-3.5-flash-lite, y reiniciá el backend."
             ),
         )
     if "API key" in text or "API_KEY" in text or "PERMISSION_DENIED" in text:
