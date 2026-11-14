@@ -243,7 +243,7 @@ def _adjuntar_archivo_impl(
             s, actor, [AdjuntoTicket(upload_id=upload_id, resumen=resumen)]
         )
         a = ticket_service.add_attachment(s, actor, ticket_id, data)
-        return f"Archivo '{a.filename}' adjuntado a {ticket_id}."
+        return f"Archivo '{a.filename}' adjuntado a {a.ticket_id}."
     finally:
         if session is None:
             s.close()
@@ -376,12 +376,12 @@ def _consultar_historial_impl(
         actor = _actor(s, user_id)
         events = ticket_service.get_history(s, actor, ticket_id)
         if not events:
-            return f"El ticket {ticket_id} no tiene eventos registrados."
+            return f"El ticket {ticket_service.normalize_ticket_id(ticket_id)} no tiene eventos registrados."
         lines = [
             f"{e.timestamp} | {e.event_type} | {e.old_value or '-'} -> {e.new_value or '-'} | actor {e.actor_id}"
             for e in events
         ]
-        return f"Historial de {ticket_id} ({len(events)} eventos):\n" + "\n".join(lines)
+        return f"Historial de {ticket_service.normalize_ticket_id(ticket_id)} ({len(events)} eventos):\n" + "\n".join(lines)
     finally:
         if session is None:
             s.close()
