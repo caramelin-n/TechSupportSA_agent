@@ -335,9 +335,14 @@ docker compose exec backend python scripts/indexar_tickets.py --calibrar
 ```
 
 `--calibrar` muestra, para cada ticket, su vecino más cercano y la distancia.
-Con eso se ajusta `DUPLICATE_MAX_DISTANCE` (0.20 por defecto): los pares del
-seed que son la misma incidencia (TCK-1001/1007, TCK-1006/1012,
-TCK-1002/1013) tienen que quedar por debajo y el resto por encima.
+Con eso se ajusta `DUPLICATE_MAX_DISTANCE` (0.14 por defecto). Calibración con
+`gemini-embedding-001` sobre el seed: los pares que son la misma incidencia
+quedaron en 0.079 (TCK-1001/1007, facturación) y 0.120 (TCK-1006/1012,
+backup); el primer par de problemas distintos, en 0.157. Con este modelo
+todos los tickets de soporte quedan relativamente cerca entre sí (el más
+lejano, a 0.26), así que el umbral tiene que ser ajustado: con 0.20 se
+marcaban como duplicados tickets sin relación. Si se cambia
+`EMBEDDING_MODEL`, hay que reindexar (`--todos`) y recalibrar.
 
 En los tests, un embedder falso y determinista (`tests/conftest.py`) reemplaza
 a Gemini, así que no se gasta cuota aunque haya `GOOGLE_API_KEY`.

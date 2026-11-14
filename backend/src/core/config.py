@@ -37,7 +37,7 @@ class Settings(BaseSettings):
     # Distancia coseno máxima (0 = idénticos, 1 = sin relación) para considerar
     # que dos tickets pueden ser la misma incidencia. Calibrala con
     # `python -m scripts.indexar_tickets --calibrar`.
-    duplicate_max_distance: float = 0.20
+    duplicate_max_distance: float = 0.14
 
     @property
     def checkpoint_db_url(self) -> str:
