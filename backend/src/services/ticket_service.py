@@ -148,6 +148,8 @@ def search_tickets(session: Session, actor: User, filters: TicketFilters) -> lis
         stmt = stmt.where(Ticket.priority == filters.priority.value)
     if filters.requester_id:
         stmt = stmt.where(Ticket.requester_id == filters.requester_id)
+    if filters.unresolved:
+        stmt = stmt.where(Ticket.status.not_in(("Resuelto", "Cerrado")))
     stmt = stmt.offset(filters.offset).limit(filters.limit)
     return list(session.execute(stmt).scalars().all())
 
@@ -160,7 +162,11 @@ def update_status(session: Session, actor: User, ticket_id: str, data: TicketSta
     if new == t.status:
         return t
     if new not in TRANSITIONS.get(t.status, set()):
-        raise InvalidTransition(f"Transición inválida: {t.status} -> {new}")
+        allowed = ", ".join(sorted(TRANSITIONS.get(t.status, set()))) or "ninguno (estado final)"
+        raise InvalidTransition(
+            f"Transición inválida: {t.status} -> {new}. "
+            f"Desde {t.status} solo se puede pasar a: {allowed}."
+        )
     if new == "Cerrado" and actor.role != "admin":
         raise Forbidden("Solo admin puede cerrar un ticket")
     old = t.status
