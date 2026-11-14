@@ -175,8 +175,10 @@ def update_status(session: Session, actor: User, ticket_id: str, data: TicketSta
 
 
 def update_priority(session: Session, actor: User, ticket_id: str, data: TicketPriorityUpdate) -> Ticket:
-    if actor.role != "admin":
-        raise Forbidden("Solo admin puede cambiar la prioridad")
+    # La consigna pide que el personal de soporte pueda revisar las prioridades
+    # que propone el agente.
+    if actor.role not in ("soporte", "admin"):
+        raise Forbidden("Solo soporte/admin puede cambiar la prioridad")
     t = _ticket(session, ticket_id)
     old = t.priority
     new = data.priority.value

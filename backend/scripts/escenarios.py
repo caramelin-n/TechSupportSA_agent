@@ -344,14 +344,14 @@ ESCENARIOS: list[Escenario] = [
         [estado("TCK-1004", "Pendiente")],
     ),
     Escenario(
-        "E10", "Transición de estado inválida", "F08, criterio 9",
+        "E10", "Transición de estado inválida", "F08, criterio 8",
         "TCK-1002 está Abierto y no puede pasar directo a Resuelto: el estado no cambia.",
         "Diego (soporte)",
         [Paso("Pasá el TCK-1002 a Resuelto, ya quedó.")],
         [estado("TCK-1002", "Abierto")],
     ),
     Escenario(
-        "E11", "Gestión de un ticket e historial", "F08, F10, F11",
+        "E11", "Gestión de un ticket e historial", "F08, F10, F11, criterio 9",
         "Soporte toma un ticket: cambia el estado, se lo asigna y comenta. Todo "
         "queda en el historial con fecha y responsable.",
         "Diego (soporte)",

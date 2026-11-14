@@ -166,7 +166,7 @@ Cerrado → (terminal)
 
 ### 5.3 Otros cambios
 
-- **Prioridad** (`PATCH /tickets/{id}/priority`): solo admin; genera `PRIORITY_CHANGED`.
+- **Prioridad** (`PATCH /tickets/{id}/priority`): soporte o admin (la consigna pide que soporte pueda revisar las prioridades propuestas); genera `PRIORITY_CHANGED`.
 - **Asignación** (`PATCH /tickets/{id}/assignee`): soporte/admin; genera `ASSIGNED`.
 - **Comentarios** (`POST /tickets/{id}/comments`): cualquier lector del ticket; genera `COMMENT_ADDED`.
 - **Historial** (`GET /tickets/{id}/history`): solo lectores del ticket.
@@ -189,7 +189,7 @@ Cerrado → (terminal)
 | GET | `/tickets/{id}` | lector |
 | GET | `/tickets/{id}/history` | lector |
 | PATCH | `/tickets/{id}/status` | soporte |
-| PATCH | `/tickets/{id}/priority` | admin |
+| PATCH | `/tickets/{id}/priority` | soporte, admin |
 | PATCH | `/tickets/{id}/assignee` | soporte |
 | POST | `/tickets/{id}/comments` | lector |
 | POST | `/chat/upload` | autenticado |
@@ -397,8 +397,8 @@ en `backend/informes/escenarios-FECHA.md` (ignorado por git: copiá el final a
 | E07 | Consultas | Lucía | F09 | Estado de «1001» y sus tickets abiertos |
 | E08 | Consulta de soporte | Diego | F09 | Críticas sin resolver: TCK-1002 y TCK-1006 |
 | E09 | Permisos | Lucía | F10, criterio 11 | Un usuario no puede cerrar: TCK-1004 sigue Pendiente |
-| E10 | Transición inválida | Diego | F08, criterio 9 | Abierto → Resuelto no se aplica |
-| E11 | Gestión e historial | Diego | F08, F10, F11 | Estado, asignación y comentario en el historial |
+| E10 | Transición inválida | Diego | F08, criterio 8 | Abierto → Resuelto no se aplica |
+| E11 | Gestión e historial | Diego | F08, F10, F11, criterio 9 | Estado, asignación y comentario en el historial |
 | E12 | Confirmación rechazada | Diego | F06, F10 | Rechazar deja la prioridad como estaba |
 | E13 | Resumen | Raúl | F12 | Resumen por estado, categoría y prioridad |
 

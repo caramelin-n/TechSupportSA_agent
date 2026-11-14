@@ -79,7 +79,7 @@ puede verificar.
 - `buscar_tickets`: lista tickets filtrando por estado, categoría, prioridad o
   solicitante. Sirve también para el chequeo previo de duplicados.
 - `actualizar_estado`: cambia el estado respetando las transiciones válidas.
-- `actualizar_prioridad`: cambia la prioridad (solo `admin`).
+- `actualizar_prioridad`: cambia la prioridad (solo `soporte` o `admin`).
 - `asignar_ticket`: asigna el ticket a una persona de soporte (solo `soporte` y
   `admin`).
 - `agregar_comentario`: suma un comentario al historial del ticket.
