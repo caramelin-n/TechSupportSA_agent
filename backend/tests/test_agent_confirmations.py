@@ -198,3 +198,45 @@ def test_pendiente_sobrevive_a_un_reinicio_con_postgres(agent_factory, db_sessio
     assert first.pending_actions
     assert second.reply == "Creado."
     assert _count_tickets(db_session) == before + 1
+
+
+def test_ticket_con_adjunto_de_punta_a_punta(agent_factory, db_session, tmp_path, monkeypatch):
+    """Mensaje con imagen → crear_ticket con adjuntos → confirmar → Attachment."""
+    from pathlib import Path
+
+    from src.agent.multimodal import build_content
+    from src.core.config import settings
+    from src.models import Attachment, User
+    from src.services import upload_service
+
+    monkeypatch.setattr(settings, "upload_dir", str(tmp_path))
+    sample = Path(__file__).resolve().parents[1] / "data" / "samples" / "captura_acceso_denegado.png"
+    up = upload_service.save_upload(
+        db_session, db_session.get(User, USUARIO), sample.name, sample.read_bytes()
+    )
+    content = build_content("No puedo entrar al sistema", [up])
+    up_id, up_path = up.id, up.path  # la herramienta cierra la sesión compartida
+    agent_factory(
+        _tool_call(
+            "crear_ticket",
+            title="Acceso denegado al sistema de facturación",
+            description="Al abrir el sistema aparece el error 0x80070005.",
+            category="Accesos y permisos",
+            priority="Alta",
+            adjuntos=[{"upload_id": up_id, "resumen": "Error 0x80070005: acceso denegado"}],
+        ),
+        AIMessage(content="Registré el ticket con la captura."),
+    )
+
+    first = _run(orchestrator.run_agent(USUARIO, "adj-1", content))
+    [action] = first.pending_actions
+    assert "1 adjunto(s)" in action.description
+
+    second = _run(orchestrator.resume_agent(USUARIO, "adj-1", "approve"))
+    assert second.reply == "Registré el ticket con la captura."
+    att = db_session.execute(
+        select(Attachment).where(Attachment.filename == sample.name)
+        .order_by(Attachment.id.desc())
+    ).scalars().first()
+    assert att.analysis_summary == "Error 0x80070005: acceso denegado"
+    assert att.path == up_path

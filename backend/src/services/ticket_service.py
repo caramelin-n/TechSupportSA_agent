@@ -208,6 +208,28 @@ def add_comment(session: Session, actor: User, ticket_id: str, data: CommentCrea
     return c
 
 
+def add_attachment(
+    session: Session, actor: User, ticket_id: str, data: AttachmentCreate
+) -> Attachment:
+    """Adjunta un archivo a un ticket existente. Mismo permiso que comentar."""
+    t = _ticket(session, ticket_id)
+    if not _can_read(actor, t):
+        raise Forbidden("No tenés permiso para adjuntar archivos a este ticket")
+    a = Attachment(
+        ticket_id=t.id, filename=data.filename, path=data.path,
+        kind=data.kind, analysis_summary=data.analysis_summary,
+        added_at=_now(), added_by=actor.id,
+    )
+    session.add(a)
+    session.add(HistoryEvent(
+        ticket_id=t.id, event_type="FILE_ATTACHED", old_value=None,
+        new_value=data.filename, actor_id=actor.id, timestamp=_now(),
+    ))
+    session.commit()
+    session.refresh(a)
+    return a
+
+
 def get_history(session: Session, actor: User, ticket_id: str) -> list[HistoryEvent]:
     t = _ticket(session, ticket_id)
     if not _can_read(actor, t):

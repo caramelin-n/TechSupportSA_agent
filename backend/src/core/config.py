@@ -26,6 +26,10 @@ class Settings(BaseSettings):
     # confirmación). `postgres` persiste entre reinicios; `memory` solo sirve
     # para pruebas rápidas sin base.
     checkpointer: Literal["postgres", "memory"] = "postgres"
+    # Archivos que los usuarios suben al chat (capturas, TXT, LOG).
+    # En Docker queda en /app/uploads, montado como volumen.
+    upload_dir: str = str(Path(__file__).resolve().parents[2] / "uploads")
+    max_upload_mb: int = 5
 
     @property
     def checkpoint_db_url(self) -> str:

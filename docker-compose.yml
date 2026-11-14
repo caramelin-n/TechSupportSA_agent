@@ -25,6 +25,9 @@ services:
       # Opcional: sin key el CRUD funciona; solo falla el agente/embeddings.
       GOOGLE_API_KEY: ${GOOGLE_API_KEY:-}
       LLM_MODEL: ${LLM_MODEL:-gemini-2.5-flash-lite}
+    volumes:
+      # Archivos subidos al chat: sobreviven a rebuilds del backend.
+      - uploads:/app/uploads
     depends_on:
       db:
         condition: service_healthy
@@ -38,3 +41,4 @@ services:
 
 volumes:
   pgdata:
+  uploads:

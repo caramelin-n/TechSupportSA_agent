@@ -6,6 +6,10 @@ Flujo con confirmación:
 2. `POST /chat/{conversation_id}/decision` con `approve` o `reject` → se ejecuta
    (o se descarta) y el agente responde.
 Mientras haya acciones pendientes, `POST /chat` en esa conversación devuelve 409.
+
+Adjuntos (F02): primero `POST /chat/upload` (multipart, campo `files`) devuelve
+un id por archivo; después `POST /chat` con `upload_ids` los manda al agente
+junto con el mensaje.
 """
 from __future__ import annotations
 
@@ -13,8 +17,9 @@ import logging
 from typing import Any, Literal
 from uuid import uuid4
 
-from fastapi import APIRouter, Depends, HTTPException, Path, status
+from fastapi import APIRouter, Depends, File, HTTPException, Path, UploadFile, status
 from pydantic import BaseModel, Field
+from sqlalchemy.orm import Session
 
 from src.agent.orchestrator import (
     AgentReply,
@@ -23,8 +28,14 @@ from src.agent.orchestrator import (
     resume_agent,
     run_agent,
 )
-from src.api.deps import get_current_user
+from src.agent.multimodal import build_content
+from src.api.deps import get_current_user, get_db
+from src.core.config import settings
 from src.models import User
+from src.services import upload_service
+from src.services.exceptions import NotFound, ValidationError
+
+MAX_FILES_PER_MESSAGE = 5
 
 logger = logging.getLogger(__name__)
 
@@ -34,6 +45,18 @@ router = APIRouter(tags=["chat"])
 class ChatRequest(BaseModel):
     message: str = Field(min_length=1, max_length=4000)
     conversation_id: str | None = Field(default=None, max_length=100)
+    upload_ids: list[int] = Field(
+        default_factory=list,
+        max_length=MAX_FILES_PER_MESSAGE,
+        description="Ids devueltos por POST /chat/upload para mandar con este mensaje.",
+    )
+
+
+class UploadOut(BaseModel):
+    id: int
+    filename: str
+    kind: str = Field(description="imagen, txt o log")
+    size_bytes: int
 
 
 class PendingActionOut(BaseModel):
@@ -127,14 +150,49 @@ async def _call(fn, *args) -> AgentReply | str:
         raise _friendly_error(exc)
 
 
+@router.post("/chat/upload", response_model=list[UploadOut], status_code=201)
+async def upload_files(
+    files: list[UploadFile] = File(description=f"Hasta {MAX_FILES_PER_MESSAGE} archivos"),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> list[UploadOut]:
+    if len(files) > MAX_FILES_PER_MESSAGE:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Máximo {MAX_FILES_PER_MESSAGE} archivos por vez.",
+        )
+    max_bytes = settings.max_upload_mb * 1024 * 1024
+    out: list[UploadOut] = []
+    for f in files:
+        # Lee un byte de más para detectar archivos grandes sin cargarlos enteros.
+        data = await f.read(max_bytes + 1)
+        try:
+            u = upload_service.save_upload(db, current_user, f.filename, data)
+        except ValidationError as exc:
+            raise HTTPException(status_code=422, detail=str(exc))
+        out.append(UploadOut(id=u.id, filename=u.filename, kind=u.kind, size_bytes=u.size_bytes))
+    return out
+
+
 @router.post("/chat", response_model=ChatResponse)
 async def chat(
     payload: ChatRequest,
     current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
     runner=Depends(get_run_agent),
 ) -> ChatResponse:
     conversation_id = payload.conversation_id or uuid4().hex
-    result = await _call(runner, current_user.id, conversation_id, payload.message)
+    try:
+        uploads = upload_service.get_owned_uploads(db, current_user, payload.upload_ids)
+        content = build_content(payload.message, uploads)
+    except NotFound as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+    except OSError:
+        logger.exception("No se pudo leer un adjunto")
+        raise HTTPException(
+            status_code=410, detail="Un adjunto ya no está disponible; volvé a subirlo."
+        )
+    result = await _call(runner, current_user.id, conversation_id, content)
     return _response(result, conversation_id)
 
 

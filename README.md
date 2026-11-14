@@ -55,8 +55,11 @@ curl -s -X POST localhost:8000/chat/demo-1/decision -H "Authorization: Bearer $T
   -H 'Content-Type: application/json' -d '{"decision":"approve"}'
 ```
 
-Pendiente: detección semántica de duplicados (pgvector) y entrada multimodal
-(imágenes/logs).
+Para mandar capturas, fotos o logs: `POST /chat/upload` (multipart) devuelve
+un id por archivo, y `POST /chat` los recibe en `upload_ids`. Ver
+[docs/backend-overview.md](docs/backend-overview.md#62-adjuntos-f02).
+
+Pendiente: detección semántica de duplicados (pgvector).
 
 ## Documentación
 

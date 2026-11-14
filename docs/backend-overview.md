@@ -17,7 +17,6 @@ El backend expone una API REST para gestión de tickets de soporte con autentica
 - Agente de chat (`POST /chat`) con function calling y memoria entre turnos.
 
 **Pendiente (RAG):** `ticket_embeddings` + pgvector, `buscar_tickets_similares` para detectar duplicados semánticamente.
-**Pendiente (multimodal):** entrada de imágenes/logs en `/chat`.
 **Pendiente (frontend):** la UI es solo un scaffold que consulta `/api/health`.
 
 ### 1.2 Stack y decisiones
@@ -194,6 +193,7 @@ Cerrado → (terminal)
 | PATCH | `/tickets/{id}/priority` | admin |
 | PATCH | `/tickets/{id}/assignee` | soporte |
 | POST | `/tickets/{id}/comments` | lector |
+| POST | `/chat/upload` | autenticado |
 | POST | `/chat` | autenticado |
 | POST | `/chat/{conversation_id}/decision` | autenticado (solo su conversación) |
 | GET | `/health`, `/health/db` | público |
@@ -254,20 +254,65 @@ modelo que no pida confirmación por texto para evitar la doble pregunta.
 
 Herramientas expuestas: `crear_ticket`, `consultar_ticket`, `buscar_tickets`,
 `actualizar_estado`, `actualizar_prioridad`, `asignar_ticket`,
-`agregar_comentario`, `consultar_historial`, `resumen_incidencias`,
-`listar_usuarios`.
+`agregar_comentario`, `adjuntar_archivo`, `consultar_historial`,
+`resumen_incidencias`, `listar_usuarios`.
 
 Errores de dominio y de validación se devuelven como `"Error: ..."` para que el
 LLM los explique; nunca se propaga una excepción al modelo.
 
-Pendiente: detección semántica de duplicados (`ticket_embeddings` + pgvector) y
-entrada multimodal (imágenes/logs).
+Pendiente: detección semántica de duplicados (`ticket_embeddings` + pgvector).
+
+### 6.2 Adjuntos (F02)
+
+El archivo llega **antes** de que exista el ticket, así que el flujo tiene dos
+pasos:
+
+1. `POST /chat/upload` (multipart, campo `files`, hasta 5 archivos) valida y
+   guarda cada archivo y devuelve `[{"id", "filename", "kind", "size_bytes"}]`.
+2. `POST /chat` con `{"message": "...", "upload_ids": [id, ...]}` manda el
+   mensaje y los archivos al agente.
+
+```bash
+curl -s -X POST localhost:8000/chat/upload -H "Authorization: Bearer $TOKEN" \
+  -F files=@backend/data/samples/captura_acceso_denegado.png \
+  -F files=@backend/data/samples/app_facturacion.log
+curl -s -X POST localhost:8000/chat -H "Authorization: Bearer $TOKEN" \
+  -H 'Content-Type: application/json' \
+  -d '{"message":"No puedo entrar a facturación","upload_ids":[1,2]}'
+```
+
+**Validación** (`services/upload_service.py`): se aceptan PNG, JPG y WEBP
+(decididos por el contenido, no por la extensión, y verificados con Pillow) y
+TXT/LOG (por extensión, rechazando contenido binario). Máximo
+`MAX_UPLOAD_MB` (5 por defecto). El archivo se guarda en
+`UPLOAD_DIR/{user_id}/{uuid}.ext`; el nombre original queda en la tabla
+`uploads`. Errores de validación → 422. Un id ajeno o inexistente → 404 (no
+se distingue, para no revelar qué ids existen). Si el archivo ya no está en
+disco → 410.
+
+**Qué ve el modelo** (`agent/multimodal.py`, sin LLM, testeable): el mensaje
+y, por cada adjunto, un encabezado `[Adjunto #id: nombre (tipo) — nota]`
+seguido de:
+
+- imagen: bloque `image` en base64, achicada a 1568 px de lado si hace falta
+  (y rotada según EXIF);
+- TXT/LOG de hasta 250 líneas y 15 000 caracteres: completo;
+- LOG más largo: solo las líneas con ERROR/WARN/FATAL/excepciones y 2 de
+  contexto (tope 200); si no hay ninguna, las primeras y últimas 40, con una
+  nota que lo aclara para que el modelo no invente un error.
+
+**En el ticket**: `crear_ticket` recibe `adjuntos: [{upload_id, resumen}]` y
+`adjuntar_archivo(ticket_id, upload_id, resumen)` suma uno a un ticket
+existente (mismo permiso que comentar). Ambas validan que el upload sea del
+usuario, lo copian a `attachments` con el resumen del análisis y registran
+`FILE_ATTACHED` en el historial. La descripción de la confirmación de
+`crear_ticket` indica cuántos adjuntos lleva.
 
 ## 7. Datos y migraciones
 
 ### 7.1 Esquema
 
-Tablas: `users`, `tickets`, `attachments`, `comments`, `history`, `categories`, `priorities`, `documentos_embeddings` (vector(1536)).
+Tablas: `users`, `tickets`, `attachments`, `uploads`, `comments`, `history`, `categories`, `priorities`, `documentos_embeddings` (vector(1536)).
 
 ### 7.2 Seed
 
@@ -275,7 +320,7 @@ Tablas: `users`, `tickets`, `attachments`, `comments`, `history`, `categories`, 
 
 ### 7.3 Migraciones
 
-- `migrations/versions/`: `4f7693e83575_initial.py`, `c10c8b5597b8_add_user_password_hash.py`.
+- `migrations/versions/`: `4f7693e83575_initial.py`, `c10c8b5597b8_add_user_password_hash.py`, `8d0bc44accd2_add_named_unique_users_email.py`, `e543c2461f61_add_uploads.py`.
 - `alembic.ini` tiene la URL vacía; `env.py` lee `settings.database_url`.
 - Para agregar una migración: `docker compose exec backend alembic revision --autogenerate -m "..."` y **rebuild** del backend (el Dockerfile copia el código en build).
 
@@ -286,7 +331,9 @@ Tablas: `users`, `tickets`, `attachments`, `comments`, `history`, `categories`, 
 - `buscar_tickets_similares` (pgvector) **no implementado** — fase agente.
 - Búsqueda de duplicados antes de crear ticket **no implementada** — fase agente.
 - Las tablas `checkpoint*` las crea LangGraph (`setup()`), no Alembic; `migrations/env.py` las excluye del autogenerate.
-- Las imágenes que se manden al chat quedarán guardadas en base64 dentro del checkpoint.
+- Las imágenes que se mandan al chat quedan guardadas en base64 dentro del checkpoint (además del archivo en `UPLOAD_DIR`).
+- `uploads` no se limpia sola: los archivos que nunca se adjuntaron a un ticket quedan en disco.
+- `seed.py` borra `uploads` antes que `users` (FK); los archivos en disco no.
 - Ticket IDs `max+1` no son concurrency-safe (aceptado para demo).
 - `AGENTS.md` e `instructions.md` son local-only (gitignored).
 - Docstrings de `db.py`/`seed.py` citan `instructions.md §13.6/§14`, secciones que ya no existen.

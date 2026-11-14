@@ -22,6 +22,7 @@ from src.models import (  # noqa: E402
     HistoryEvent,
     Priority,
     Ticket,
+    Upload,
     User,
 )
 
@@ -40,6 +41,7 @@ def main() -> None:
         session.query(Comment).delete()
         session.query(Attachment).delete()
         session.query(Ticket).delete()
+        session.query(Upload).delete()  # FK a users
         session.query(User).delete()
         session.query(Category).delete()
         session.query(Priority).delete()

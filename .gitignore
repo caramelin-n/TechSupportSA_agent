@@ -8,3 +8,6 @@ dist/
 # Archivos locales que no deben versionarse
 AGENTS.md
 instructions.md
+
+# Archivos subidos al chat en desarrollo
+backend/uploads/

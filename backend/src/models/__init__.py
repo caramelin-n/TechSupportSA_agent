@@ -58,6 +58,28 @@ class Attachment(Base):
     added_by: Mapped[str] = mapped_column(Text, ForeignKey("users.id"), nullable=False)
 
 
+class Upload(Base):
+    """Archivo subido al chat, antes de pertenecer a un ticket.
+
+    El archivo llega antes de que exista el ticket. Cuando el agente crea el
+    ticket (o adjunta a uno existente), se copia como `Attachment` con el
+    resumen del análisis.
+    """
+
+    __tablename__ = "uploads"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[str] = mapped_column(
+        Text, ForeignKey("users.id"), nullable=False, index=True
+    )
+    filename: Mapped[str] = mapped_column(Text, nullable=False)
+    path: Mapped[str] = mapped_column(Text, nullable=False)
+    kind: Mapped[str] = mapped_column(Text, nullable=False)  # imagen | txt | log
+    mime_type: Mapped[str] = mapped_column(Text, nullable=False)
+    size_bytes: Mapped[int] = mapped_column(Integer, nullable=False)
+    created_at: Mapped[str] = mapped_column(Text, nullable=False)
+
+
 class Comment(Base):
     __tablename__ = "comments"
 

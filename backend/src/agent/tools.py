@@ -14,12 +14,14 @@ from functools import wraps
 from typing import Callable
 
 from langchain.tools import ToolRuntime, tool
+from pydantic import BaseModel, Field
 from pydantic import ValidationError as PydanticValidationError
 from sqlalchemy.orm import Session
 
 from src.db import SessionLocal
 from src.models import Ticket, User
 from src.schemas.ticket import (
+    AttachmentCreate,
     CommentCreate,
     Priority,
     Status,
@@ -28,7 +30,7 @@ from src.schemas.ticket import (
     TicketPriorityUpdate,
     TicketStatusUpdate,
 )
-from src.services import ticket_service, user_service
+from src.services import ticket_service, upload_service, user_service
 from src.services.exceptions import DomainError, Forbidden, NotFound
 
 
@@ -37,6 +39,16 @@ class AgentContext:
     """Contexto inyectado por el runtime; nunca lo controla el LLM."""
 
     user_id: str
+
+
+class AdjuntoTicket(BaseModel):
+    """Un archivo del chat que se adjunta a un ticket."""
+
+    upload_id: int = Field(description="Número del adjunto, el de [Adjunto #N: ...]")
+    resumen: str = Field(
+        description="Qué mostró el archivo, en una o dos oraciones. Si no se pudo "
+        "leer, decilo (por ejemplo: 'imagen borrosa, no se lee el error')."
+    )
 
 
 _PRIORITIES = ", ".join(p.value for p in Priority)
@@ -88,6 +100,24 @@ def _safe(fn: Callable) -> Callable:
     return wrapper
 
 
+def _attachments_from_uploads(
+    s: Session, actor: User, adjuntos: list[AdjuntoTicket]
+) -> list[AttachmentCreate]:
+    """Valida que los uploads sean del usuario y los pasa a AttachmentCreate."""
+    items = [AdjuntoTicket.model_validate(a) for a in adjuntos]  # dict o modelo
+    resumenes = {a.upload_id: a.resumen for a in items}
+    uploads = upload_service.get_owned_uploads(s, actor, list(resumenes))
+    return [
+        AttachmentCreate(
+            filename=u.filename,
+            path=u.path,
+            kind=u.kind,
+            analysis_summary=resumenes[u.id].strip() or None,
+        )
+        for u in uploads
+    ]
+
+
 def _fmt_ticket(t: Ticket) -> str:
     assignee = t.assignee_id or "sin asignar"
     return (
@@ -109,6 +139,7 @@ def _crear_ticket_impl(
     description: str,
     category: str,
     priority: str,
+    adjuntos: list[AdjuntoTicket] | None = None,
     session: Session | None = None,
 ) -> str:
     s = _session(session)
@@ -119,9 +150,35 @@ def _crear_ticket_impl(
             description=description,
             category=category,
             priority=_parse_priority(priority),
+            attachments=_attachments_from_uploads(s, actor, adjuntos or []),
         )
         t = ticket_service.create_ticket(s, actor, data)
-        return f"Ticket creado: {t.id} (estado {t.status}, prioridad {t.priority})."
+        extra = f", {len(data.attachments)} adjunto(s)" if data.attachments else ""
+        return (
+            f"Ticket creado: {t.id} (estado {t.status}, prioridad {t.priority}{extra})."
+        )
+    finally:
+        if session is None:
+            s.close()
+
+
+@_safe
+def _adjuntar_archivo_impl(
+    user_id: str,
+    ticket_id: str,
+    upload_id: int,
+    resumen: str,
+    *,
+    session: Session | None = None,
+) -> str:
+    s = _session(session)
+    try:
+        actor = _actor(s, user_id)
+        [data] = _attachments_from_uploads(
+            s, actor, [AdjuntoTicket(upload_id=upload_id, resumen=resumen)]
+        )
+        a = ticket_service.add_attachment(s, actor, ticket_id, data)
+        return f"Archivo '{a.filename}' adjuntado a {ticket_id}."
     finally:
         if session is None:
             s.close()
@@ -311,20 +368,36 @@ def crear_ticket(
     category: str,
     priority: str,
     runtime: ToolRuntime[AgentContext],
+    adjuntos: list[AdjuntoTicket] | None = None,
 ) -> str:
     """Crea un ticket de soporte. Antes de usarla, descartá duplicados con
     buscar_tickets. No pidas confirmación por texto: el sistema se la pide al
     usuario antes de ejecutarla. `category` debe ser una de:
     Hardware, Software, Redes y conectividad, Sistemas y aplicaciones,
     Accesos y permisos, Infraestructura, Otros. `priority`: Baja, Media, Alta,
-    Crítica."""
+    Crítica. Si el usuario mandó archivos en esta conversación, incluilos en
+    `adjuntos` con su número y un resumen de lo que mostraron."""
     return _crear_ticket_impl(
         runtime.context.user_id,
         title=title,
         description=description,
         category=category,
         priority=priority,
+        adjuntos=adjuntos,
     )
+
+
+@tool
+def adjuntar_archivo(
+    ticket_id: str,
+    upload_id: int,
+    resumen: str,
+    runtime: ToolRuntime[AgentContext],
+) -> str:
+    """Adjunta un archivo del chat a un ticket que ya existe. `upload_id` es el
+    número de [Adjunto #N: ...]; `resumen` dice qué mostró el archivo (o que no
+    se pudo leer). Queda registrado en el historial."""
+    return _adjuntar_archivo_impl(runtime.context.user_id, ticket_id, upload_id, resumen)
 
 
 @tool
@@ -419,6 +492,7 @@ TOOLS = [
     actualizar_prioridad,
     asignar_ticket,
     agregar_comentario,
+    adjuntar_archivo,
     consultar_historial,
     resumen_incidencias,
     listar_usuarios,

@@ -138,7 +138,9 @@ def thread_id(user_id: str, conversation_id: str) -> str:
 _DESCRIPTIONS = {
     "crear_ticket": lambda a: (
         f"Crear el ticket «{a.get('title', '')}» "
-        f"(categoría {a.get('category', '?')}, prioridad {a.get('priority', '?')})"
+        f"(categoría {a.get('category', '?')}, prioridad {a.get('priority', '?')}"
+        + (f", {len(a['adjuntos'])} adjunto(s)" if a.get("adjuntos") else "")
+        + ")"
     ),
     "actualizar_estado": lambda a: (
         f"Cambiar el estado de {a.get('ticket_id', '?')} a «{a.get('nuevo_estado', '?')}»"
