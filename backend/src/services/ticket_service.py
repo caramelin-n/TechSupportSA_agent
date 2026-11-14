@@ -1,10 +1,11 @@
 """Lógica de negocio de tickets (sin IA)."""
 from __future__ import annotations
 
+import re
 from collections import Counter
 from datetime import datetime, timezone
 
-from sqlalchemy import func, select
+from sqlalchemy import func, select, text
 from sqlalchemy.orm import Session
 
 from src.models import Attachment, Comment, HistoryEvent, Ticket, User
@@ -42,15 +43,28 @@ def _now() -> str:
 
 
 def _next_ticket_id(session: Session) -> str:
-    # ponytail: max+1; concurrencia no es crítico en esta fase (demo).
-    last = session.execute(select(Ticket.id).order_by(Ticket.id.desc()).limit(1)).scalar_one_or_none()
-    n = 1000
-    if last and last.startswith("TCK-"):
-        try:
-            n = int(last.split("-", 1)[1])
-        except ValueError:
-            pass
-    return f"TCK-{n + 1}"
+    # Secuencia de Postgres (migración dd298544509b): numérica y sin carreras
+    # entre dos creaciones simultáneas.
+    n = session.execute(text("SELECT nextval('ticket_number_seq')")).scalar_one()
+    return f"TCK-{n}"
+
+
+def sync_ticket_number_seq(session: Session) -> None:
+    """Deja la secuencia en el ticket más alto existente (la usa el seed)."""
+    session.execute(text(
+        "SELECT setval('ticket_number_seq', GREATEST(1000, COALESCE("
+        "(SELECT MAX(CAST(substring(id FROM 5) AS integer)) FROM tickets "
+        "WHERE id ~ '^TCK-[0-9]+$'), 1000)))"
+    ))
+
+
+_TICKET_ID = re.compile(r"^\s*(?:tck)?[\s#-]*(\d+)\s*$", re.IGNORECASE)
+
+
+def normalize_ticket_id(ticket_id: str) -> str:
+    """Acepta "TCK-1001", "tck 1001", "TCK1001", "#1001" o "1001"."""
+    m = _TICKET_ID.match(ticket_id or "")
+    return f"TCK-{int(m.group(1))}" if m else (ticket_id or "").strip()
 
 
 def _user(session: Session, user_id: str) -> User:
@@ -61,6 +75,7 @@ def _user(session: Session, user_id: str) -> User:
 
 
 def _ticket(session: Session, ticket_id: str) -> Ticket:
+    ticket_id = normalize_ticket_id(ticket_id)
     t = session.get(Ticket, ticket_id)
     if t is None:
         raise NotFound(f"Ticket {ticket_id} no encontrado")
@@ -208,12 +223,34 @@ def add_comment(session: Session, actor: User, ticket_id: str, data: CommentCrea
     return c
 
 
+def add_attachment(
+    session: Session, actor: User, ticket_id: str, data: AttachmentCreate
+) -> Attachment:
+    """Adjunta un archivo a un ticket existente. Mismo permiso que comentar."""
+    t = _ticket(session, ticket_id)
+    if not _can_read(actor, t):
+        raise Forbidden("No tenés permiso para adjuntar archivos a este ticket")
+    a = Attachment(
+        ticket_id=t.id, filename=data.filename, path=data.path,
+        kind=data.kind, analysis_summary=data.analysis_summary,
+        added_at=_now(), added_by=actor.id,
+    )
+    session.add(a)
+    session.add(HistoryEvent(
+        ticket_id=t.id, event_type="FILE_ATTACHED", old_value=None,
+        new_value=data.filename, actor_id=actor.id, timestamp=_now(),
+    ))
+    session.commit()
+    session.refresh(a)
+    return a
+
+
 def get_history(session: Session, actor: User, ticket_id: str) -> list[HistoryEvent]:
     t = _ticket(session, ticket_id)
     if not _can_read(actor, t):
         raise Forbidden("No tenés permiso para ver este historial")
     return list(session.execute(
-        select(HistoryEvent).where(HistoryEvent.ticket_id == ticket_id).order_by(HistoryEvent.id)
+        select(HistoryEvent).where(HistoryEvent.ticket_id == t.id).order_by(HistoryEvent.id)
     ).scalars().all())
 
 

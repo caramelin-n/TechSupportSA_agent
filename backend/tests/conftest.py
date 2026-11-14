@@ -50,3 +50,50 @@ def client(db_session):
     with TestClient(app) as c:
         yield c
     app.dependency_overrides.clear()
+
+
+class FakeEmbedder:
+    """Embeddings deterministas sin red: bolsa de palabras en 1536 dimensiones.
+
+    Textos con palabras en común quedan cerca, como con un modelo real, así se
+    puede probar la detección de duplicados sin gastar cuota.
+    """
+
+    model = "fake-embedder"
+
+    def __init__(self) -> None:
+        self.calls = 0
+
+    @staticmethod
+    def _words(text: str) -> list[str]:
+        import re
+        import unicodedata
+
+        plain = unicodedata.normalize("NFKD", text.lower())
+        plain = "".join(c for c in plain if not unicodedata.combining(c))
+        return [w for w in re.findall(r"[a-z0-9]+", plain) if len(w) > 3]
+
+    def embed(self, texts: list[str]) -> list[list[float]]:
+        import hashlib
+        import math
+
+        self.calls += 1
+        out = []
+        for t in texts:
+            v = [0.0] * 1536
+            for w in self._words(t):
+                v[int(hashlib.md5(w.encode()).hexdigest(), 16) % 1536] += 1.0
+            norm = math.sqrt(sum(x * x for x in v)) or 1.0
+            out.append([x / norm for x in v])
+        return out
+
+
+@pytest.fixture(autouse=True)
+def fake_embedder():
+    """Ningún test llama a la API real de embeddings, aunque haya GOOGLE_API_KEY."""
+    from src.services import similarity_service
+
+    embedder = FakeEmbedder()
+    similarity_service.set_embedder(embedder)
+    yield embedder
+    similarity_service.set_embedder(embedder)

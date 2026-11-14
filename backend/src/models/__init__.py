@@ -4,7 +4,7 @@ from __future__ import annotations
 from datetime import datetime
 
 from pgvector.sqlalchemy import Vector
-from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, UniqueConstraint
+from sqlalchemy import DateTime, ForeignKey, Index, Integer, String, Text, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
@@ -56,6 +56,52 @@ class Attachment(Base):
     analysis_summary: Mapped[str | None] = mapped_column(Text, nullable=True)
     added_at: Mapped[str] = mapped_column(Text, nullable=False)
     added_by: Mapped[str] = mapped_column(Text, ForeignKey("users.id"), nullable=False)
+
+
+class TicketEmbedding(Base):
+    """Vector semántico de un ticket (título + categoría + descripción).
+
+    Sirve para encontrar tickets abiertos que describen la misma incidencia.
+    """
+
+    __tablename__ = "ticket_embeddings"
+    __table_args__ = (
+        Index(
+            "ix_ticket_embeddings_hnsw",
+            "embedding",
+            postgresql_using="hnsw",
+            postgresql_ops={"embedding": "vector_cosine_ops"},
+        ),
+    )
+
+    ticket_id: Mapped[str] = mapped_column(
+        Text, ForeignKey("tickets.id", ondelete="CASCADE"), primary_key=True
+    )
+    embedding: Mapped[list] = mapped_column(Vector(1536), nullable=False)
+    model: Mapped[str] = mapped_column(Text, nullable=False)
+    updated_at: Mapped[str] = mapped_column(Text, nullable=False)
+
+
+class Upload(Base):
+    """Archivo subido al chat, antes de pertenecer a un ticket.
+
+    El archivo llega antes de que exista el ticket. Cuando el agente crea el
+    ticket (o adjunta a uno existente), se copia como `Attachment` con el
+    resumen del análisis.
+    """
+
+    __tablename__ = "uploads"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[str] = mapped_column(
+        Text, ForeignKey("users.id"), nullable=False, index=True
+    )
+    filename: Mapped[str] = mapped_column(Text, nullable=False)
+    path: Mapped[str] = mapped_column(Text, nullable=False)
+    kind: Mapped[str] = mapped_column(Text, nullable=False)  # imagen | txt | log
+    mime_type: Mapped[str] = mapped_column(Text, nullable=False)
+    size_bytes: Mapped[int] = mapped_column(Integer, nullable=False)
+    created_at: Mapped[str] = mapped_column(Text, nullable=False)
 
 
 class Comment(Base):

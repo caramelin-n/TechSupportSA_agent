@@ -21,10 +21,27 @@ target_metadata = Base.metadata
 
 config.set_main_option("sqlalchemy.url", settings.database_url)
 
+from src.agent.checkpointer import CHECKPOINT_TABLES  # noqa: E402
+
+
+def include_object(obj, name, type_, reflected, compare_to):
+    """Las tablas del checkpointer las maneja LangGraph, no Alembic.
+
+    Sin este filtro, `alembic revision --autogenerate` propondría borrarlas.
+    """
+    if type_ == "table" and name in CHECKPOINT_TABLES:
+        return False
+    return True
+
 
 def run_migrations_offline() -> None:
     url = config.get_main_option("sqlalchemy.url")
-    context.configure(url=url, target_metadata=target_metadata, literal_binds=True)
+    context.configure(
+        url=url,
+        target_metadata=target_metadata,
+        literal_binds=True,
+        include_object=include_object,
+    )
     with context.begin_transaction():
         context.run_migrations()
 
@@ -36,7 +53,11 @@ def run_migrations_online() -> None:
         poolclass=pool.NullPool,
     )
     with connectable.connect() as connection:
-        context.configure(connection=connection, target_metadata=target_metadata)
+        context.configure(
+            connection=connection,
+            target_metadata=target_metadata,
+            include_object=include_object,
+        )
         with context.begin_transaction():
             context.run_migrations()
 

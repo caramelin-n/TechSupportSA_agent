@@ -31,6 +31,7 @@ langchain-google-genai==4.5.0
 langchain-protocol==0.0.21
 langgraph==1.2.21
 langgraph-checkpoint==4.3.1
+langgraph-checkpoint-postgres==3.2.0
 langgraph-prebuilt==1.1.1
 langgraph-sdk==0.4.14
 langsmith==0.14.17
@@ -45,6 +46,7 @@ pillow==13.0.0
 pluggy==1.7.0
 psycopg==3.3.8
 psycopg-binary==3.3.8
+psycopg-pool==3.3.3
 pwdlib==0.3.1
 pyasn1==0.6.5
 pyasn1-modules==0.4.2
@@ -56,6 +58,7 @@ pygments==2.21.0
 pyjwt==2.15.1
 pytest==9.2.0
 python-dotenv==1.2.4
+python-multipart==0.0.33
 pyyaml==6.0.3
 requests==2.34.2
 requests-toolbelt==1.0.0

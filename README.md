@@ -44,8 +44,41 @@ curl -s -X POST localhost:8000/chat -H "Authorization: Bearer $TOKEN" \
   -d '{"message":"La impresora del 2do piso no responde","conversation_id":"demo-1"}'
 ```
 
-Pendiente: detección semántica de duplicados (pgvector) y entrada multimodal
-(imágenes/logs).
+Crear tickets, cambiar estado o prioridad y asignar requieren confirmación: la
+respuesta trae `pending_actions` y se confirma con
+`POST /chat/{conversation_id}/decision` (`{"decision": "approve"}` o
+`{"decision": "reject", "message": "..."}`). Ver
+[docs/backend-overview.md](docs/backend-overview.md#61-agente-post-chat).
+
+```bash
+curl -s -X POST localhost:8000/chat/demo-1/decision -H "Authorization: Bearer $TOKEN" \
+  -H 'Content-Type: application/json' -d '{"decision":"approve"}'
+```
+
+Para mandar capturas, fotos o logs: `POST /chat/upload` (multipart) devuelve
+un id por archivo, y `POST /chat` los recibe en `upload_ids`. Ver
+[docs/backend-overview.md](docs/backend-overview.md#62-adjuntos-f02).
+
+Para detectar tickets duplicados, los tickets del seed necesitan sus
+embeddings (requiere `GOOGLE_API_KEY`):
+
+```bash
+docker compose exec backend python scripts/indexar_tickets.py
+```
+
+Ver [docs/backend-overview.md](docs/backend-overview.md#63-tickets-duplicados-criterio-10).
+
+### Escenarios de prueba (criterio 12)
+
+13 conversaciones contra el modelo real que cubren F01–F12 y los criterios de
+evaluación, con un informe en Markdown de cada conversación:
+
+```bash
+docker compose exec backend python scripts/escenarios.py --preparar
+```
+
+`--preparar` recarga el seed (borra los datos actuales). Ver
+[docs/backend-overview.md](docs/backend-overview.md#8-escenarios-de-prueba-criterio-12).
 
 ## Documentación
 
