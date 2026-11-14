@@ -293,7 +293,10 @@ seguido de:
 
 - imagen: bloque `image` en base64, achicada a 1568 px de lado si hace falta
   (y rotada según EXIF);
-- TXT/LOG de hasta 250 líneas y 15 000 caracteres: completo;
+- TXT/LOG de hasta 250 líneas y 15 000 caracteres: completo; en los LOG, la
+  nota cuenta las líneas de error y de advertencia ("sin errores; 1
+  advertencia(s) WARN"), para que el modelo no tome una advertencia aislada
+  como incidencia;
 - LOG más largo: solo las líneas con ERROR/WARN/FATAL/excepciones y 2 de
   contexto (tope 200); si no hay ninguna, las primeras y últimas 40, con una
   nota que lo aclara para que el modelo no invente un error.

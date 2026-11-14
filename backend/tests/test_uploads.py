@@ -321,3 +321,21 @@ def test_get_owned_uploads_respeta_el_orden_y_duplicados(db_session):
     assert [u.id for u in got] == [b.id, a.id]
     with pytest.raises(NotFound):
         upload_service.get_owned_uploads(db_session, lucia, [999999])
+
+
+def test_log_corto_informa_errores_y_advertencias():
+    text = (SAMPLES / "log_ambiguo.log").read_text(encoding="utf-8")
+    content, note = multimodal.extract_text(text, "log")
+    assert content == text
+    assert note == "completo, 121 líneas; sin errores; 1 advertencia(s) WARN"
+
+    _, note = multimodal.extract_text("INFO ok\nERROR timeout\nWARN reintento", "log")
+    assert note.endswith("1 línea(s) de error, 1 advertencia(s) WARN")
+
+    _, note = multimodal.extract_text("INFO ok\nINFO ok", "log")
+    assert note.endswith("sin errores ni advertencias")
+
+
+def test_txt_no_lleva_conteo_de_errores():
+    _, note = multimodal.extract_text("La impresora no anda, da error.", "txt")
+    assert note == "completo, 1 líneas"

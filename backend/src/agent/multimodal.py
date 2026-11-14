@@ -27,6 +27,12 @@ CONTEXT_LINES = 2
 MAX_EXTRACT_LINES = 200
 HEAD_TAIL_LINES = 40
 
+ERRORS = re.compile(
+    r"\b(ERROR|ERR|FATAL|CRITICAL|SEVERE|PANIC)\b|Exception|Traceback|Caused by",
+    re.IGNORECASE,
+)
+WARNINGS = re.compile(r"\bWARN(ING)?\b", re.IGNORECASE)
+
 RELEVANT = re.compile(
     r"\b(ERROR|ERR|WARN(ING)?|FATAL|CRITICAL|SEVERE|PANIC)\b"
     r"|Exception|Traceback|\bat [\w.$]+\(|Caused by",
@@ -65,12 +71,27 @@ def image_block(upload: Upload) -> dict:
     }
 
 
-def extract_text(text: str) -> tuple[str, str]:
+def severity_note(lines: list[str]) -> str:
+    """Cuántos errores y advertencias tiene un log, para que el modelo no
+    convierta una advertencia aislada en una incidencia."""
+    errors = sum(1 for line in lines if ERRORS.search(line))
+    warnings = sum(1 for line in lines if WARNINGS.search(line))
+    if not errors and not warnings:
+        return "sin errores ni advertencias"
+    if not errors:
+        return f"sin errores; {warnings} advertencia(s) WARN"
+    return f"{errors} línea(s) de error, {warnings} advertencia(s) WARN"
+
+
+def extract_text(text: str, kind: str = "log") -> tuple[str, str]:
     """Devuelve (contenido, nota) a enviar al modelo para un TXT/LOG."""
     lines = text.splitlines()
     total = len(lines)
     if total <= FULL_TEXT_MAX_LINES and len(text) <= FULL_TEXT_MAX_CHARS:
-        return text, f"completo, {total} líneas"
+        note = f"completo, {total} líneas"
+        if kind == "log":
+            note += f"; {severity_note(lines)}"
+        return text, note
 
     hits = [i for i, line in enumerate(lines) if RELEVANT.search(line)]
     if not hits:
@@ -108,7 +129,7 @@ def extract_text(text: str) -> tuple[str, str]:
 def upload_blocks(upload: Upload) -> list[dict]:
     if upload.kind == "imagen":
         return [{"type": "text", "text": _header(upload)}, image_block(upload)]
-    content, note = extract_text(read_text(upload))
+    content, note = extract_text(read_text(upload), upload.kind)
     return [{"type": "text", "text": f"{_header(upload, note)}\n{content}"}]
 
 
