@@ -143,7 +143,7 @@ backend/src/
 
 ### 5.1 Identidad y creación
 
-- IDs: `TCK-####` calculados como `max(id)+1` (no concurrency-safe; aceptado para la demo).
+- IDs: `TCK-####` desde la secuencia `ticket_number_seq` (numérica y segura ante creaciones simultáneas; `seed.py` la sincroniza con el ticket más alto). Al buscar, `1001`, `tck 1001`, `TCK1001` y `#1001` equivalen a `TCK-1001`.
 - Estado inicial: `Abierto`.
 - Evento `CREATED` en `history` con actor y timestamp.
 - Adjuntos opcionales en la creación generan eventos `FILE_ATTACHED`.
@@ -359,27 +359,69 @@ Tablas: `users`, `tickets`, `ticket_embeddings` (vector(1536), HNSW), `attachmen
 
 ### 7.3 Migraciones
 
-- `migrations/versions/`: `4f7693e83575_initial.py`, `c10c8b5597b8_add_user_password_hash.py`, `8d0bc44accd2_add_named_unique_users_email.py`, `e543c2461f61_add_uploads.py`, `7f1eadfa70d3_add_ticket_embeddings.py`.
+- `migrations/versions/`: `4f7693e83575_initial.py`, `c10c8b5597b8_add_user_password_hash.py`, `8d0bc44accd2_add_named_unique_users_email.py`, `e543c2461f61_add_uploads.py`, `7f1eadfa70d3_add_ticket_embeddings.py`, `dd298544509b_ticket_number_sequence.py`.
 - `alembic.ini` tiene la URL vacía; `env.py` lee `settings.database_url`.
 - Para agregar una migración: `docker compose exec backend alembic revision --autogenerate -m "..."` y **rebuild** del backend (el Dockerfile copia el código en build).
 
-## 8. Gotchas y decisiones pendientes
+## 8. Escenarios de prueba (criterio 12)
+
+`backend/scripts/escenarios.py` corre conversaciones completas contra el
+backend y el modelo real, como lo haría el frontend: sube archivos, manda
+mensajes, aprueba o rechaza las confirmaciones y verifica el resultado
+(qué respondió el agente y qué quedó en la base). Genera un informe en
+Markdown con cada conversación y sus verificaciones, para la entrega.
+
+```bash
+# Recarga el seed, indexa los embeddings y corre los 13 escenarios
+docker compose exec backend python scripts/escenarios.py --preparar
+# Algunos, con pausa entre llamadas si aparecen límites de cuota
+docker compose exec backend python scripts/escenarios.py --solo E02,E06 --pausa 5
+```
+
+`--preparar` **borra la base** y la recarga con el seed: los escenarios
+asumen ese estado (por ejemplo, que TCK-1002 está Abierto). El informe queda
+en `backend/informes/escenarios-FECHA.md` (ignorado por git: copiá el final a
+`docs/` para la entrega). Termina con código 1 si algún escenario falla.
+
+| ID | Escenario | Usuario | Requisitos | Qué verifica |
+|---|---|---|---|---|
+| E01 | Texto claro | Martín | F01, F03, F05–F07, F10 | Pide confirmación y crea 1 ticket Hardware |
+| E02 | Captura legible | Martín | F02, F03, F07 | Lee `0x80070005`; ticket de Accesos con la captura adjunta |
+| E03 | Captura borrosa | Lucía | F02, F04 | Pregunta; no intenta crear |
+| E04 | Log largo | Carla | F02, F03, F07 | Identifica el timeout; ticket con el log adjunto |
+| E05 | Log ambiguo | Martín | F02, F04 | Pregunta; no intenta crear |
+| E06 | Duplicado | Lucía | Criterio 10 | Menciona TCK-1001/1007; no crea |
+| E07 | Consultas | Lucía | F09 | Estado de «1001» y sus tickets abiertos |
+| E08 | Consulta de soporte | Diego | F09 | Críticas sin resolver: TCK-1002 y TCK-1006 |
+| E09 | Permisos | Lucía | F10, criterio 11 | Un usuario no puede cerrar: TCK-1004 sigue Pendiente |
+| E10 | Transición inválida | Diego | F08, criterio 9 | Abierto → Resuelto no se aplica |
+| E11 | Gestión e historial | Diego | F08, F10, F11 | Estado, asignación y comentario en el historial |
+| E12 | Confirmación rechazada | Diego | F06, F10 | Rechazar deja la prioridad como estaba |
+| E13 | Resumen | Raúl | F12 | Resumen por estado, categoría y prioridad |
+
+Los escenarios que crean tickets tienen pasos de respaldo
+(`si_no_propuso="crear_ticket"`): si el agente pide más datos antes de crear,
+el script se los da. Los chequeos son tolerantes a la redacción del modelo
+(buscan IDs, códigos de error o el estado final en la base), pero el modelo
+no es determinista: si un escenario falla, el informe muestra la
+conversación completa para ver por qué.
+
+`tests/test_escenarios.py` prueba la mecánica del script con un agente falso,
+sin gastar cuota.
+
+## 9. Gotchas y decisiones pendientes
 
 - `psycopg[binary]` obligatorio (slim no trae libpq).
 - `httpx` necesario para `TestClient`.
-- `buscar_tickets_similares` (pgvector) **no implementado** — fase agente.
-- Búsqueda de duplicados antes de crear ticket **no implementada** — fase agente.
 - Las tablas `checkpoint*` las crea LangGraph (`setup()`), no Alembic; `migrations/env.py` las excluye del autogenerate.
 - Las imágenes que se mandan al chat quedan guardadas en base64 dentro del checkpoint (además del archivo en `UPLOAD_DIR`).
 - `uploads` no se limpia sola: los archivos que nunca se adjuntaron a un ticket quedan en disco.
 - `seed.py` borra `uploads` antes que `users` (FK); los archivos en disco no.
 - Al volver a correr `seed.py` se borran los vectores (`ON DELETE CASCADE`): hay que volver a correr `scripts/indexar_tickets.py`.
-- Ticket IDs `max+1` no son concurrency-safe (aceptado para demo).
 - `AGENTS.md` e `instructions.md` son local-only (gitignored).
 - Docstrings de `db.py`/`seed.py` citan `instructions.md §13.6/§14`, secciones que ya no existen.
 
-## 9. Próximos pasos
+## 10. Próximos pasos
 
-- **Fase agente:** integrar LangChain/ADK, prompts, multimodal, embeddings y `buscar_tickets_similares`, endpoint de chat, duplicate check.
 - **Frontend:** login y UI de tickets (hoy solo scaffold + health).
 - **Docs:** docstrings en servicios y metadata OpenAPI para `/docs`.

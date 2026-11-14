@@ -68,6 +68,18 @@ docker compose exec backend python scripts/indexar_tickets.py
 
 Ver [docs/backend-overview.md](docs/backend-overview.md#63-tickets-duplicados-criterio-10).
 
+### Escenarios de prueba (criterio 12)
+
+13 conversaciones contra el modelo real que cubren F01–F12 y los criterios de
+evaluación, con un informe en Markdown de cada conversación:
+
+```bash
+docker compose exec backend python scripts/escenarios.py --preparar
+```
+
+`--preparar` recarga el seed (borra los datos actuales). Ver
+[docs/backend-overview.md](docs/backend-overview.md#8-escenarios-de-prueba-criterio-12).
+
 ## Documentación
 
 - [docs/backend-overview.md](docs/backend-overview.md) — explicación de la arquitectura, auth, permisos, estados, endpoints y deploy.

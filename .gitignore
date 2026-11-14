@@ -11,3 +11,6 @@ instructions.md
 
 # Archivos subidos al chat en desarrollo
 backend/uploads/
+
+# Informes generados por scripts/escenarios.py
+backend/informes/
