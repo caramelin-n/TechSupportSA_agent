@@ -519,7 +519,7 @@ def actualizar_estado(
 def actualizar_prioridad(
     ticket_id: str, prioridad: str, runtime: ToolRuntime[AgentContext]
 ) -> str:
-    """Cambia la prioridad de un ticket. Solo admin. `prioridad`: Baja, Media,
+    """Cambia la prioridad de un ticket. Solo soporte o admin. `prioridad`: Baja, Media,
     Alta, Crítica."""
     return _actualizar_prioridad_impl(runtime.context.user_id, ticket_id, prioridad)
 

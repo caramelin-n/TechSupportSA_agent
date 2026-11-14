@@ -30,16 +30,19 @@ def test_soporte_puede_cambiar_estado(client):
     assert r.status_code == 200
 
 
-def test_prioridad_solo_admin(client):
+def test_prioridad_solo_soporte_y_admin(client):
     utok = _token(client, USER)
     tid = _create(client, utok)
+    r = client.patch(f"/tickets/{tid}/priority", json={"priority": "Alta"}, headers={"Authorization": f"Bearer {utok}"})
+    assert r.status_code == 403
     stok = _token(client, SOPORTE)
     r = client.patch(f"/tickets/{tid}/priority", json={"priority": "Alta"}, headers={"Authorization": f"Bearer {stok}"})
-    assert r.status_code == 403
-    atok = _token(client, ADMIN)
-    r = client.patch(f"/tickets/{tid}/priority", json={"priority": "Alta"}, headers={"Authorization": f"Bearer {atok}"})
     assert r.status_code == 200
     assert r.json()["priority"] == "Alta"
+    atok = _token(client, ADMIN)
+    r = client.patch(f"/tickets/{tid}/priority", json={"priority": "Crítica"}, headers={"Authorization": f"Bearer {atok}"})
+    assert r.status_code == 200
+    assert r.json()["priority"] == "Crítica"
 
 
 def test_listar_usuarios_requiere_soporte(client):

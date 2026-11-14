@@ -66,16 +66,19 @@ def test_soporte_puede_cambiar_estado(db_session):
     assert "En revisión" in res
 
 
-def test_prioridad_solo_admin(db_session):
+def test_prioridad_solo_soporte_y_admin(db_session):
     out = _crear(db_session)
     ticket_id = out.split()[2].rstrip(".")
 
-    res = t._actualizar_prioridad_impl(SOPORTE, ticket_id, "Alta", session=db_session)
+    res = t._actualizar_prioridad_impl(USUARIO, ticket_id, "Alta", session=db_session)
     assert res.startswith("Error:")
-    assert "Solo admin" in res
+    assert "soporte/admin" in res
 
-    res = t._actualizar_prioridad_impl(ADMIN, ticket_id, "Alta", session=db_session)
+    res = t._actualizar_prioridad_impl(SOPORTE, ticket_id, "Alta", session=db_session)
     assert "Alta" in res
+
+    res = t._actualizar_prioridad_impl(ADMIN, ticket_id, "Crítica", session=db_session)
+    assert "Crítica" in res
 
 
 def test_usuario_no_ve_ticket_ajeno(db_session):
