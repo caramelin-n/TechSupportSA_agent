@@ -126,6 +126,8 @@ class TicketFilters(BaseModel):
     category: Optional[str] = None
     priority: Optional[Priority] = None
     requester_id: Optional[str] = None
+    # Solo tickets sin resolver: todo menos Resuelto y Cerrado.
+    unresolved: bool = False
     limit: int = Field(default=50, ge=1, le=200)
     offset: int = Field(default=0, ge=0)
 

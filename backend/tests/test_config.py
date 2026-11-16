@@ -33,3 +33,11 @@ def test_settings_accepts_valid_url(monkeypatch):
 
     s = config.Settings(_env_file=None)
     assert s.database_url.startswith("postgresql")
+
+
+def test_checkpoint_url_quita_el_driver(monkeypatch):
+    monkeypatch.setenv("DATABASE_URL", "postgresql+psycopg://u:p@db:5432/x")
+    import src.core.config as config
+
+    s = config.Settings(_env_file=None)
+    assert s.checkpoint_db_url == "postgresql://u:p@db:5432/x"

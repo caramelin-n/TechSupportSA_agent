@@ -15,6 +15,7 @@ sys.path.insert(0, str(ROOT))
 
 from src.core.security import hash_password  # noqa: E402
 from src.db import SessionLocal  # noqa: E402
+from src.services import ticket_service  # noqa: E402
 from src.models import (  # noqa: E402
     Attachment,
     Category,
@@ -22,6 +23,7 @@ from src.models import (  # noqa: E402
     HistoryEvent,
     Priority,
     Ticket,
+    Upload,
     User,
 )
 
@@ -40,6 +42,7 @@ def main() -> None:
         session.query(Comment).delete()
         session.query(Attachment).delete()
         session.query(Ticket).delete()
+        session.query(Upload).delete()  # FK a users
         session.query(User).delete()
         session.query(Category).delete()
         session.query(Priority).delete()
@@ -104,6 +107,9 @@ def main() -> None:
                     actor_id=h["actor_id"],
                     timestamp=h["timestamp"],
                 ))
+        session.flush()
+        # Los tickets nuevos siguen numerando desde el más alto del seed.
+        ticket_service.sync_ticket_number_seq(session)
         session.commit()
 
         n_users = session.query(User).count()
