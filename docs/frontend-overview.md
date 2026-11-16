@@ -13,7 +13,7 @@ El frontend es una **SPA React** que consume la API REST del backend. Hoy cubre 
 - Layout con identidad del usuario y su rol.
 - Cierre de sesión.
 
-**Pendiente:** UI de tickets (listado, detalle, filtros, creación), subida de adjuntos y el chat con el agente (el endpoint `/chat` todavía no existe en el backend).
+**Pendiente:** UI de tickets (listado, detalle, filtros, creación), subida de adjuntos y el chat con el agente. El endpoint `/chat` ya existe en el backend (con confirmaciones y adjuntos); falta la pantalla.
 
 ## 2. Stack
 
@@ -124,7 +124,7 @@ Helpers en `src/test/setup.js`: `jsonResponse(data, status)` y
 - **Los tests del backend borran la base**: `backend/tests/conftest.py` tiene un
   fixture `autouse` que corre el seed en cada sesión. Después de correrlos hay
   que volver a ejecutar `docker compose exec backend python seed.py`.
-- **La sesión vive en `localStorage`**: un XJS podría leer el token. Para
+- **La sesión vive en `localStorage`**: un XSS podría leer el token. Para
   producción, la alternativa es cookie `httpOnly` (implica cambiar el backend a
   cookies y agregar manejo de CSRF).
 - **El rol viene de `/auth/me`**, nunca del login. Si el backend cambiara el
@@ -134,6 +134,7 @@ Helpers en `src/test/setup.js`: `jsonResponse(data, status)` y
 
 1. **UI de tickets**: listado con filtros por estado/categoría/prioridad,
    detalle con historial y comentarios, alta de ticket con adjuntos.
-2. **Chat con el agente**: requiere el endpoint `/chat` del backend.
+2. **Chat con el agente**: el endpoint `/chat` ya está en el backend (con
+   confirmación de acciones y adjuntos); falta la pantalla que lo consuma.
 3. **Subida de adjuntos**: `nginx.conf` ya permite `client_max_body_size 20m`.
 4. **E2E**: Playwright para cubrir el flujo completo contra el backend real.

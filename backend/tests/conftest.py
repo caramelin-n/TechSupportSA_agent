@@ -1,6 +1,8 @@
 """Fixtures de test: DB con rollback por test."""
 import os
+import shutil
 import sys
+import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -17,6 +19,21 @@ import seed  # noqa: E402
 
 # Asegura que las tablas existan.
 Base.metadata.create_all(bind=engine)
+
+
+@pytest.fixture(scope="session", autouse=True)
+def isolated_upload_dir():
+    """Los tests escriben adjuntos en un temporal, no en el volumen real.
+
+    El rollback de la DB no borra los archivos, así que sin esto cada corrida
+    dejaría huérfanos en `uploads/`.
+    """
+    original = settings.upload_dir
+    path = Path(tempfile.mkdtemp(prefix="uploads-test-"))
+    settings.upload_dir = str(path)
+    yield path
+    settings.upload_dir = original
+    shutil.rmtree(path, ignore_errors=True)
 
 
 @pytest.fixture(scope="session", autouse=True)

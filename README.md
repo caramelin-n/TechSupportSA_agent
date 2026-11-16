@@ -1,6 +1,9 @@
 # TechSupport S.A.
 
-Agente de tickets (CRUD + auth JWT hoy; RAG + function calling pendiente). La spec funcional completa está en `instructions.md` (local, gitignored).
+Agente de tickets de soporte: CRUD + auth JWT, agente conversacional con
+function calling, detección semántica de duplicados, entrada multimodal
+(imágenes, TXT y LOG) y frontend con login. La spec funcional completa está en
+`instructions.md` (local, gitignored).
 
 ## Todo corre en Docker
 
@@ -83,15 +86,23 @@ docker compose exec backend python scripts/escenarios.py --preparar
 ## Frontend
 
 SPA React (Vite + Tailwind) servida por nginx en `http://localhost:8080`.
-El login vive en `/login`; hay botones de acceso rápido para los tres roles de la demo.
+El login vive en `/login`, con botones de acceso rápido para los tres roles de
+la demo. Por ahora cubre **solo autenticación**: el panel es un placeholder.
+
+Todo corre en Docker:
 
 ```bash
-cd frontend
-npm install
-npm run dev     # dev server con proxy a la API en :8000
-npm test        # vitest
-npm run build   # genera dist/
+# build de producción (imagen con el dist ya compilado)
+docker compose build frontend
+
+# tests (vitest dentro de la imagen de build)
+docker compose -f docker-compose.yml -f docker-compose.dev.yml run --rm \
+  --entrypoint sh frontend-build -c "npm ci --silent && npm test"
 ```
+
+Para el dev server de Vite dentro de Docker hace falta un servicio con
+`target: build`; el `frontend-build` ya lo tiene. Si corrés `npm run dev` en el
+host, definí `VITE_PROXY_TARGET=localhost` (ver `frontend/.env.example`).
 
 ## Documentación
 

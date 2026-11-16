@@ -132,7 +132,7 @@ backend/src/
 | Comentar (propio) | ✅ | ✅ | ✅ |
 | Cambiar estado | ❌ | ✅ | ✅ |
 | Asignar ticket | ❌ | ✅ | ✅ |
-| Cambiar prioridad | ❌ | ❌ | ✅ |
+| Cambiar prioridad | ❌ | ✅ | ✅ |
 | Cerrar ticket (`Cerrado`) | ❌ | ❌ | ✅ |
 | Listar usuarios | ❌ | ✅ | ✅ |
 | Resumen de incidencias | ❌ | ✅ | ✅ |

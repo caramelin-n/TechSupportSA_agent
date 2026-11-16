@@ -72,7 +72,7 @@ def test_prioridad_solo_soporte_y_admin(db_session):
 
     res = t._actualizar_prioridad_impl(USUARIO, ticket_id, "Alta", session=db_session)
     assert res.startswith("Error:")
-    assert "soporte/admin" in res
+    assert "soporte y admin" in res
 
     res = t._actualizar_prioridad_impl(SOPORTE, ticket_id, "Alta", session=db_session)
     assert "Alta" in res

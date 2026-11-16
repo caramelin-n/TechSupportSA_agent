@@ -36,8 +36,14 @@ def umbral(monkeypatch):
 
 @pytest.fixture()
 def indexed(db_session, fake_embedder):
-    """Indexa los tickets del seed, como hace scripts/indexar_tickets.py."""
-    tickets = similarity_service.tickets_without_embedding(db_session)
+    """Indexa TODOS los tickets del seed con el embedder falso.
+
+    Re-indexa aunque ya existan embeddings: la base de desarrollo puede tener
+    el índice real de Gemini, y mezclar vectores de modelos distintos daría
+    distancias sin sentido. Los cambios quedan dentro de la transacción del
+    test y se revierten, así el índice real no se toca.
+    """
+    tickets = list(db_session.execute(select(Ticket)).scalars())
     similarity_service.index_tickets(db_session, tickets, fake_embedder)
     return db_session
 
