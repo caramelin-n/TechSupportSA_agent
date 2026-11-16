@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ACCEPT_ATTR, MAX_FILES } from "../chat/constants";
 import AttachmentChips from "./AttachmentChips";
 
@@ -17,6 +17,12 @@ export default function Composer({
 }) {
   const [text, setText] = useState("");
   const fileRef = useRef(null);
+  const textareaRef = useRef(null);
+
+  // Devuelve el foco al terminar la respuesta (o al resolver una confirmación).
+  useEffect(() => {
+    if (!disabled && !uploading) textareaRef.current?.focus();
+  }, [disabled, uploading]);
 
   const canSend = !disabled && !uploading && text.trim().length > 0;
 
@@ -55,6 +61,7 @@ export default function Composer({
           </label>
           <textarea
             id="chat-message"
+            ref={textareaRef}
             rows={2}
             value={text}
             onChange={(e) => setText(e.target.value)}

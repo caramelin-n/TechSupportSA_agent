@@ -1,9 +1,17 @@
+import { useEffect, useRef } from "react";
 import MessageBubble from "./MessageBubble";
 
 /**
  * Historial de la conversación. Con la conversación vacía muestra sugerencias.
  */
 export default function MessageList({ messages, sending, suggestions, onSuggestion }) {
+  const bottomRef = useRef(null);
+
+  // Mantiene visible el último mensaje (el DOM no scrollea solo).
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView?.({ block: "end" });
+  }, [messages.length, sending]);
+
   if (messages.length === 0) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-4 px-4 py-10 text-center">
@@ -50,6 +58,8 @@ export default function MessageList({ messages, sending, suggestions, onSuggesti
           </div>
         </div>
       )}
+
+      <div ref={bottomRef} />
     </div>
   );
 }
