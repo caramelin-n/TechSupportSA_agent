@@ -2,8 +2,7 @@
 
 Agente de tickets de soporte: CRUD + auth JWT, agente conversacional con
 function calling, detección semántica de duplicados, entrada multimodal
-(imágenes, TXT y LOG) y frontend con login. La spec funcional completa está en
-`instructions.md` (local, gitignored).
+(imágenes, TXT y LOG) y frontend con login. 
 
 ## Todo corre en Docker
 
