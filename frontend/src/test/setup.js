@@ -28,7 +28,14 @@ export function mockFetch(routes) {
     calls.push({ url, path, method, options });
 
     const key = `${method} ${path}`;
-    const handler = routes[key] ?? routes[path] ?? routes["*"];
+    const pathSinQuery = path.split("?")[0];
+    const keySinQuery = `${method} ${pathSinQuery}`;
+    const handler =
+      routes[key] ??
+      routes[path] ??
+      routes[keySinQuery] ??
+      routes[pathSinQuery] ??
+      routes["*"];
     if (!handler) {
       return jsonResponse({ detail: `Sin mock para ${key}` }, 404);
     }

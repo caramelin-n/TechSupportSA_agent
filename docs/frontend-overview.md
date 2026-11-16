@@ -15,8 +15,10 @@ El frontend es una **SPA React** que consume la API REST del backend. Cubre el
 - Cierre de sesión.
 - **Chat con el agente**: texto, adjuntos (PNG/JPG/WEBP/TXT/LOG) y confirmación
   de acciones (aprobar/rechazar).
+- **Tickets**: listado con filtros y paginación, detalle con historial,
+  comentarios y acciones según rol (estado, prioridad, asignación) y alta directa.
 
-**Pendiente:** UI de tickets (listado, detalle, filtros, creación) y E2E con Playwright.
+**Pendiente:** E2E con Playwright.
 
 ## 2. Stack
 
@@ -46,17 +48,23 @@ frontend/src/
 ├── chat/
 │   ├── useChat.js      # mensajes, conversación, pendientes, adjuntos
 │   └── constants.js    # límites, tipos aceptados, sugerencias
+├── tickets/
+│   ├── constants.js    # estados, transiciones, prioridades, estilos
+│   └── useDirectory.js # nombres de usuarios (GET /users para soporte/admin)
 ├── components/
-│   ├── AppLayout.jsx   # navbar con usuario, rol y logout
+│   ├── AppLayout.jsx   # navbar (Chat / Tickets), usuario, rol y logout
 │   ├── RequireAuth.jsx # guarda de rutas privadas
 │   ├── MessageList.jsx / MessageBubble.jsx
 │   ├── Composer.jsx    # texto + adjuntos + enviar
 │   ├── AttachmentChips.jsx
-│   └── PendingActions.jsx
+│   ├── PendingActions.jsx
+│   └── tickets/        # Badges, TicketFilters, TicketTable
 ├── pages/
 │   ├── LoginPage.jsx
 │   ├── ChatPage.jsx    # pantalla principal
-│   └── NotFoundPage.jsx
+│   ├── TicketsPage.jsx # listado + filtros + paginación
+│   ├── TicketDetailPage.jsx
+│   └── NewTicketPage.jsx
 └── test/setup.js      # mocks de fetch y helpers
 ```
 
@@ -120,6 +128,23 @@ el próximo `seed.py`; no hay endpoint de borrado.
 modelo se muestran tal cual (son accionables); un 409 no debería ocurrir porque
 el composer está bloqueado, pero se maneja igual.
 
+## 5.2 Tickets
+
+- **Listado (`/tickets`):** filtros por estado, prioridad, categoría y "solo sin
+  resolver". Pide `limit+1` para saber si hay página siguiente sin que el backend
+  exponga un total. Un `usuario` solo ve sus tickets (lo impone el backend).
+- **Detalle (`/tickets/:id`):** datos, descripción e historial. Las acciones se
+  muestran según el rol: estado (soporte/admin, con `Cerrado` solo para admin),
+  prioridad y asignación (soporte/admin), y comentar (cualquiera que pueda leer).
+  Las transiciones permitidas se calculan en el cliente con el mismo mapa que el
+  backend; el backend sigue siendo la autoridad y devuelve 409/403 si algo no
+  corresponde.
+- **Alta (`/tickets/new`):** formulario directo para el personal. Las categorías
+  salen de `GET /catalog/categories`; la prioridad es el enum fijo.
+- **Nombres de usuarios:** `GET /users` es solo para soporte/admin. Para un
+  `usuario` se muestran los ids (sus tickets solo lo tienen a él como
+  solicitante).
+
 ## 6. Proxy y despliegue
 
 | Entorno | Cómo llega `/api/...` al backend |
@@ -144,15 +169,19 @@ npm test          # vitest run
 npm run test:watch
 ```
 
-28 tests, todos sin red: `fetch` está mockeado con `vi.stubGlobal`.
+45 tests, todos sin red: `fetch` está mockeado con `vi.stubGlobal`.
 
 | Archivo | Qué cubre |
 |---|---|
 | `src/api/client.test.js` | Header Bearer, errores 401/403/422, `onUnauthorized`, error de red. |
 | `src/api/chat.test.js` | `sendMessage`, `uploadFiles` (multipart sin `Content-Type`), `decide`, 409. |
+| `src/api/tickets.test.js` | Filtros/paginación, alta y acciones (`new_status`, `priority`, `assignee_id`, `text`). |
 | `src/auth/AuthContext.test.jsx` | Bootstrap con token válido/inválido, login, `RequireAuth`. |
 | `src/pages/LoginPage.test.jsx` | Login exitoso, 401, acceso rápido de la demo. |
 | `src/pages/ChatPage.test.jsx` | Enviar mensaje, confirmar/rechazar, 503, adjuntos, límites de archivos. |
+| `src/pages/TicketsPage.test.jsx` | Listado, vacío, cambio de filtro, paginación, limpiar filtros. |
+| `src/pages/TicketDetailPage.test.jsx` | Datos + historial, acciones por rol, comentario, error del backend. |
+| `src/pages/NewTicketPage.test.jsx` | Alta + navegación, validación, error 422. |
 
 Helpers en `src/test/setup.js`: `jsonResponse(data, status)` y
 `mockFetch(routes)`, que enrutan por `"MÉTODO /ruta"`.
@@ -181,8 +210,7 @@ Helpers en `src/test/setup.js`: `jsonResponse(data, status)` y
 
 ## 9. Próximos pasos
 
-1. **UI de tickets**: listado con filtros por estado/categoría/prioridad,
-   detalle con historial y comentarios, alta de ticket con adjuntos.
-2. **E2E**: Playwright para cubrir login + chat + confirmación contra el backend
-   real.
-3. **Streaming** de la respuesta del agente (hoy se espera la respuesta completa).
+1. **E2E**: Playwright para cubrir login + chat + confirmación + alta de ticket
+   contra el backend real.
+2. **Detalles de UX**: scroll infinito o paginación con total, y orden por
+   columnas en el listado.

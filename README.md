@@ -87,9 +87,13 @@ docker compose exec backend python scripts/escenarios.py --preparar
 
 SPA React (Vite + Tailwind) servida por nginx en `http://localhost:8080`.
 El login vive en `/login`, con botones de acceso rápido para los tres roles de
-la demo. Después del login, la pantalla principal es el **chat con el agente**:
-texto, adjuntos (PNG/JPG/WEBP/TXT/LOG) y botones de **Aprobar / Rechazar** para
-las acciones que requieren confirmación.
+la demo. Después del login hay dos pantallas:
+
+- **Chat** (`/`): texto, adjuntos (PNG/JPG/WEBP/TXT/LOG) y botones de
+  **Aprobar / Rechazar** para las acciones que requieren confirmación.
+- **Tickets** (`/tickets`): listado con filtros y paginación, detalle con
+  historial y comentarios, y acciones según rol (estado, prioridad, asignación).
+  El alta directa está en `/tickets/new`.
 
 ```bash
 # tests (vitest dentro de la imagen de build)

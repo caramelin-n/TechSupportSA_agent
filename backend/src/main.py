@@ -8,6 +8,7 @@ from fastapi import FastAPI
 from src.agent.checkpointer import open_checkpointer
 from src.agent.orchestrator import set_checkpointer
 from src.api.routes_auth import router as auth_router
+from src.api.routes_catalog import router as catalog_router
 from src.api.routes_chat import router as chat_router
 from src.api.routes_health import router as health_router
 from src.api.routes_tickets import router as tickets_router
@@ -28,5 +29,6 @@ app = FastAPI(title="TechSupport S.A. API", lifespan=lifespan)
 app.include_router(health_router)
 app.include_router(auth_router)
 app.include_router(users_router)
+app.include_router(catalog_router)
 app.include_router(tickets_router)
 app.include_router(chat_router)

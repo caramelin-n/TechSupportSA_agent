@@ -183,6 +183,8 @@ Cerrado → (terminal)
 | GET | `/auth/me` | autenticado |
 | GET | `/users` | soporte |
 | GET | `/users/{id}` | autenticado |
+| GET | `/catalog/categories` | autenticado |
+| GET | `/catalog/priorities` | autenticado |
 | POST | `/tickets` | usuario |
 | GET | `/tickets` | usuario (solo propios) |
 | GET | `/tickets/summary` | soporte |

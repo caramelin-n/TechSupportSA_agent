@@ -1,11 +1,13 @@
+import { NavLink } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
+import { ROLE_LABEL } from "../tickets/constants";
 
-/** Etiqueta legible del rol del usuario. */
-const ROLES = {
-  usuario: "Usuario",
-  soporte: "Soporte",
-  admin: "Admin",
-};
+function navClass({ isActive }) {
+  const base = "rounded-md px-3 py-1.5 text-sm transition";
+  return isActive
+    ? `${base} bg-gray-100 font-medium text-gray-900`
+    : `${base} text-gray-600 hover:bg-gray-50 hover:text-gray-900`;
+}
 
 export default function AppLayout({ children }) {
   const { user, logout } = useAuth();
@@ -13,19 +15,27 @@ export default function AppLayout({ children }) {
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="border-b border-gray-200 bg-white">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
-          <div className="flex items-center gap-3">
-            <span className="text-lg font-semibold text-gray-900">TechSupport S.A.</span>
-            {user && (
-              <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700">
-                {ROLES[user.role] ?? user.role}
-              </span>
-            )}
-          </div>
+        <div className="mx-auto flex max-w-5xl flex-wrap items-center gap-3 px-6 py-4">
+          <span className="text-lg font-semibold text-gray-900">TechSupport S.A.</span>
 
           {user && (
-            <div className="flex items-center gap-4">
-              <span className="text-sm text-gray-600">
+            <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700">
+              {ROLE_LABEL[user.role] ?? user.role}
+            </span>
+          )}
+
+          <nav className="flex items-center gap-1 sm:ml-4">
+            <NavLink to="/" end className={navClass}>
+              Chat
+            </NavLink>
+            <NavLink to="/tickets" className={navClass}>
+              Tickets
+            </NavLink>
+          </nav>
+
+          {user && (
+            <div className="ml-auto flex items-center gap-4">
+              <span className="hidden text-sm text-gray-600 sm:inline">
                 {user.name}
                 <span className="text-gray-400"> · {user.area}</span>
               </span>
