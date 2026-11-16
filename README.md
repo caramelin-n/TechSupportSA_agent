@@ -111,4 +111,3 @@ host, definí `VITE_PROXY_TARGET=localhost` (ver `frontend/.env.example`).
 
 - [docs/backend-overview.md](docs/backend-overview.md) — explicación de la arquitectura, auth, permisos, estados, endpoints y deploy.
 - [docs/frontend-overview.md](docs/frontend-overview.md) — arquitectura del frontend, flujo de autenticación, proxy y tests.
-- Detalles de desarrollo (dependencias, convenciones, gotchas) en `AGENTS.md` (local-only, gitignored).
