@@ -1,9 +1,18 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { login as apiLogin, me as apiMe } from "../api/auth";
 import { setUnauthorizedHandler } from "../api/client";
+import { CONVERSATION_KEY } from "../chat/constants";
 import { clearToken, getToken, setToken } from "./storage";
 
 const AuthContext = createContext(null);
+
+function clearConversation() {
+  try {
+    window.sessionStorage.removeItem(CONVERSATION_KEY);
+  } catch {
+    /* sessionStorage bloqueado */
+  }
+}
 
 /**
  * Estado de sesión.
@@ -17,6 +26,7 @@ export function AuthProvider({ children }) {
 
   const logout = useCallback(() => {
     clearToken();
+    clearConversation();
     setTokenState(null);
     setUser(null);
     setStatus("anonymous");
@@ -26,6 +36,7 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     setUnauthorizedHandler(() => {
       clearToken();
+      clearConversation();
       setTokenState(null);
       setUser(null);
       setStatus("anonymous");
@@ -53,6 +64,7 @@ export function AuthProvider({ children }) {
         if (cancelado) return;
         // Token expirado o inválido: no hay refresh token, hay que re-loguear.
         clearToken();
+        clearConversation();
         setStatus("anonymous");
       }
     }

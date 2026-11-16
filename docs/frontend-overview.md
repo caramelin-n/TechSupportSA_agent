@@ -4,7 +4,8 @@
 
 ## 1. Visión general
 
-El frontend es una **SPA React** que consume la API REST del backend. Hoy cubre el **ciclo de autenticación completo**:
+El frontend es una **SPA React** que consume la API REST del backend. Cubre el
+**ciclo de autenticación completo** y la **pantalla de chat con el agente**:
 
 - Login con email y contraseña contra `POST /auth/login`.
 - Persistencia de la sesión (JWT en `localStorage`).
@@ -12,8 +13,10 @@ El frontend es una **SPA React** que consume la API REST del backend. Hoy cubre 
 - Rutas protegidas.
 - Layout con identidad del usuario y su rol.
 - Cierre de sesión.
+- **Chat con el agente**: texto, adjuntos (PNG/JPG/WEBP/TXT/LOG) y confirmación
+  de acciones (aprobar/rechazar).
 
-**Pendiente:** UI de tickets (listado, detalle, filtros, creación), subida de adjuntos y el chat con el agente. El endpoint `/chat` ya existe en el backend (con confirmaciones y adjuntos); falta la pantalla.
+**Pendiente:** UI de tickets (listado, detalle, filtros, creación) y E2E con Playwright.
 
 ## 2. Stack
 
@@ -33,18 +36,26 @@ Sin gestor de estado global: `Context` + hooks de React alcanzan para la sesión
 ```
 frontend/src/
 ├── api/
-│   ├── client.js      # wrapper de fetch: Bearer automático, errores normalizados
+│   ├── client.js      # wrapper de fetch: Bearer automático, JSON y multipart
 │   ├── auth.js        # login() y me()
+│   ├── chat.js        # sendMessage(), uploadFiles(), decide()
 │   └── config.js      # API_BASE (VITE_API_BASE)
 ├── auth/
 │   ├── AuthContext.jsx # estado de sesión + bootstrap
 │   └── storage.js      # getToken/setToken/clearToken (localStorage)
+├── chat/
+│   ├── useChat.js      # mensajes, conversación, pendientes, adjuntos
+│   └── constants.js    # límites, tipos aceptados, sugerencias
 ├── components/
 │   ├── AppLayout.jsx   # navbar con usuario, rol y logout
-│   └── RequireAuth.jsx # guarda de rutas privadas
+│   ├── RequireAuth.jsx # guarda de rutas privadas
+│   ├── MessageList.jsx / MessageBubble.jsx
+│   ├── Composer.jsx    # texto + adjuntos + enviar
+│   ├── AttachmentChips.jsx
+│   └── PendingActions.jsx
 ├── pages/
 │   ├── LoginPage.jsx
-│   ├── DashboardPage.jsx  # placeholder
+│   ├── ChatPage.jsx    # pantalla principal
 │   └── NotFoundPage.jsx
 └── test/setup.js      # mocks de fetch y helpers
 ```
@@ -79,6 +90,36 @@ que la expiración se maneja sin lógica duplicada en cada pantalla.
 - `ApiError` con `status` y `message`, listo para pintar.
 - `onUnauthorized` global para limpiar la sesión.
 
+## 5.1 Chat con el agente
+
+`ChatPage` monta el hook `useChat`, que concentra todo el estado:
+
+- `messages`: historial en memoria (el backend no expone el historial de la
+  conversación, solo el de cada ticket).
+- `conversationId`: se guarda en `sessionStorage`
+  (`techsupport.conversation`) y se limpia en `logout()`. Si falta, el backend
+  genera uno y lo devuelve.
+- `pending`: acciones que el agente quiere ejecutar y esperan confirmación.
+- `attachments`: adjuntos ya subidos (`upload_ids`) que se mandan con el
+  próximo mensaje.
+
+**Flujo de un mensaje:** `POST /chat` con `{message, conversation_id, upload_ids}`.
+La respuesta trae `{reply, conversation_id, pending_actions}`. Si
+`pending_actions` no está vacío, la acción **no se ejecutó**: la UI muestra la
+tarjeta con **Aprobar / Rechazar** y bloquea el composer, porque el backend
+responde **409** a cualquier mensaje nuevo mientras haya una pendiente. La
+decisión va a `POST /chat/{conversation_id}/decision`.
+
+**Adjuntos (F02):** se suben al seleccionarlos con `POST /chat/upload`
+(multipart, campo `files`, hasta 5 archivos de 5 MB). La UI valida extensión y
+tamaño antes de llamar y muestra chips con el `kind` que detectó el backend
+(`imagen`, `txt`, `log`). Un adjunto subido que no se envía queda huérfano hasta
+el próximo `seed.py`; no hay endpoint de borrado.
+
+**Errores:** el banner muestra el `detail` del backend. Los 503 de cuota o
+modelo se muestran tal cual (son accionables); un 409 no debería ocurrir porque
+el composer está bloqueado, pero se maneja igual.
+
 ## 6. Proxy y despliegue
 
 | Entorno | Cómo llega `/api/...` al backend |
@@ -103,13 +144,15 @@ npm test          # vitest run
 npm run test:watch
 ```
 
-16 tests, todos sin red: `fetch` está mockeado con `vi.stubGlobal`.
+28 tests, todos sin red: `fetch` está mockeado con `vi.stubGlobal`.
 
 | Archivo | Qué cubre |
 |---|---|
 | `src/api/client.test.js` | Header Bearer, errores 401/403/422, `onUnauthorized`, error de red. |
+| `src/api/chat.test.js` | `sendMessage`, `uploadFiles` (multipart sin `Content-Type`), `decide`, 409. |
 | `src/auth/AuthContext.test.jsx` | Bootstrap con token válido/inválido, login, `RequireAuth`. |
 | `src/pages/LoginPage.test.jsx` | Login exitoso, 401, acceso rápido de la demo. |
+| `src/pages/ChatPage.test.jsx` | Enviar mensaje, confirmar/rechazar, 503, adjuntos, límites de archivos. |
 
 Helpers en `src/test/setup.js`: `jsonResponse(data, status)` y
 `mockFetch(routes)`, que enrutan por `"MÉTODO /ruta"`.
@@ -118,12 +161,18 @@ Helpers en `src/test/setup.js`: `jsonResponse(data, status)` y
 
 - **`npm ci` en el Dockerfile**: si se agrega una dependencia hay que commitear
   `package-lock.json` actualizado, si no la imagen falla el build.
+- **Multipart sin `Content-Type`**: `requestForm` no lo setea a propósito; el
+  navegador agrega el boundary. Forzar `application/json` rompe `/chat/upload`.
+- **Con acción pendiente no se puede escribir**: el backend responde 409, por eso
+  el composer se deshabilita mientras `pending_actions` no esté vacío.
+- **`conversation_id` en `sessionStorage`**: sin reusarlo, el agente pierde el
+  hilo entre mensajes. Se limpia en `logout()`.
 - **`vite.config.js` y `vitest.config.js` son separados**: Vitest no lee el
   `test` del config de Vite. Si se unifican, cuidado con la config del proxy.
 - **`node:22-alpine`** en la imagen: Vitest 5 pide Node `^22.12 || ^24 || >=26`.
-- **Los tests del backend borran la base**: `backend/tests/conftest.py` tiene un
-  fixture `autouse` que corre el seed en cada sesión. Después de correrlos hay
-  que volver a ejecutar `docker compose exec backend python seed.py`.
+- **Los tests del backend corren el seed al inicio**: borran los datos creados a
+  mano (el índice de `ticket_embeddings` sí se preserva). Si necesitás datos
+  canónicos, `docker compose exec backend python seed.py`.
 - **La sesión vive en `localStorage`**: un XSS podría leer el token. Para
   producción, la alternativa es cookie `httpOnly` (implica cambiar el backend a
   cookies y agregar manejo de CSRF).
@@ -134,7 +183,6 @@ Helpers en `src/test/setup.js`: `jsonResponse(data, status)` y
 
 1. **UI de tickets**: listado con filtros por estado/categoría/prioridad,
    detalle con historial y comentarios, alta de ticket con adjuntos.
-2. **Chat con el agente**: el endpoint `/chat` ya está en el backend (con
-   confirmación de acciones y adjuntos); falta la pantalla que lo consuma.
-3. **Subida de adjuntos**: `nginx.conf` ya permite `client_max_body_size 20m`.
-4. **E2E**: Playwright para cubrir el flujo completo contra el backend real.
+2. **E2E**: Playwright para cubrir login + chat + confirmación contra el backend
+   real.
+3. **Streaming** de la respuesta del agente (hoy se espera la respuesta completa).

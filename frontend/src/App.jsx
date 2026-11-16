@@ -2,7 +2,7 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { AuthProvider } from "./auth/AuthContext";
 import AppLayout from "./components/AppLayout";
 import RequireAuth from "./components/RequireAuth";
-import DashboardPage from "./pages/DashboardPage";
+import ChatPage from "./pages/ChatPage";
 import LoginPage from "./pages/LoginPage";
 import NotFoundPage from "./pages/NotFoundPage";
 
@@ -17,7 +17,7 @@ export default function App() {
             element={
               <RequireAuth>
                 <AppLayout>
-                  <DashboardPage />
+                  <ChatPage />
                 </AppLayout>
               </RequireAuth>
             }

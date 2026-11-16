@@ -40,44 +40,24 @@ function mensajePorStatus(status, detail) {
       return "No tenés permisos para realizar esa acción.";
     case 404:
       return "No se encontró el recurso solicitado.";
+    case 409:
+      return typeof detail === "string" ? detail : "Hay una acción pendiente de confirmación.";
+    case 410:
+      return typeof detail === "string" ? detail : "El recurso ya no está disponible.";
     case 422:
       return formatValidationDetail(detail);
-    case 409:
-      return "La operación entra en conflicto con el estado actual.";
     default:
-      if (status >= 500) return "Error del servidor. Intentá de nuevo en un momento.";
+      if (status >= 500) {
+        // 503 trae un detalle útil (cuota, modelo, API key): mostrarlo tal cual.
+        if (typeof detail === "string" && detail) return detail;
+        return "Error del servidor. Intentá de nuevo en un momento.";
+      }
       return "No se pudo completar la operación.";
   }
 }
 
-/**
- * Wrapper de fetch con token Bearer automático y errores normalizados.
- *
- * @param {string} path ruta relativa al backend, sin el prefijo /api
- * @param {{method?: string, body?: unknown, auth?: boolean, signal?: AbortSignal}} options
- */
-export async function request(path, options = {}) {
-  const { method = "GET", body, auth = true, signal } = options;
-
-  const headers = { Accept: "application/json" };
-  if (body !== undefined) headers["Content-Type"] = "application/json";
-  if (auth) {
-    const token = getToken();
-    if (token) headers.Authorization = `Bearer ${token}`;
-  }
-
-  let response;
-  try {
-    response = await fetch(`${API_BASE}${path}`, {
-      method,
-      headers,
-      body: body === undefined ? undefined : JSON.stringify(body),
-      signal,
-    });
-  } catch {
-    throw new ApiError(0, "No se pudo conectar con el servidor.");
-  }
-
+/** Convierte una Response en datos o lanza `ApiError`. */
+async function parseResponse(response) {
   if (response.status === 204) return null;
 
   const texto = await response.text();
@@ -97,6 +77,63 @@ export async function request(path, options = {}) {
   }
 
   return datos;
+}
+
+/** Encabezados comunes; el Bearer es opcional. */
+function authHeaders(withAuth) {
+  const headers = { Accept: "application/json" };
+  if (withAuth) {
+    const token = getToken();
+    if (token) headers.Authorization = `Bearer ${token}`;
+  }
+  return headers;
+}
+
+/**
+ * Wrapper de fetch con token Bearer automático y errores normalizados.
+ *
+ * @param {string} path ruta relativa al backend, sin el prefijo /api
+ * @param {{method?: string, body?: unknown, auth?: boolean, signal?: AbortSignal}} options
+ */
+export async function request(path, options = {}) {
+  const { method = "GET", body, auth = true, signal } = options;
+
+  const headers = authHeaders(auth);
+  if (body !== undefined) headers["Content-Type"] = "application/json";
+
+  let response;
+  try {
+    response = await fetch(`${API_BASE}${path}`, {
+      method,
+      headers,
+      body: body === undefined ? undefined : JSON.stringify(body),
+      signal,
+    });
+  } catch {
+    throw new ApiError(0, "No se pudo conectar con el servidor.");
+  }
+
+  return parseResponse(response);
+}
+
+/**
+ * POST multipart (FormData). No setea Content-Type: lo agrega el navegador con
+ * el boundary; forzarlo rompe la subida.
+ */
+export async function requestForm(path, formData, options = {}) {
+  let response;
+  try {
+    response = await fetch(`${API_BASE}${path}`, {
+      method: "POST",
+      headers: authHeaders(true),
+      body: formData,
+      signal: options.signal,
+    });
+  } catch {
+    throw new ApiError(0, "No se pudo conectar con el servidor.");
+  }
+
+  return parseResponse(response);
 }
 
 export const api = {

@@ -87,17 +87,17 @@ docker compose exec backend python scripts/escenarios.py --preparar
 
 SPA React (Vite + Tailwind) servida por nginx en `http://localhost:8080`.
 El login vive en `/login`, con botones de acceso rápido para los tres roles de
-la demo. Por ahora cubre **solo autenticación**: el panel es un placeholder.
-
-Todo corre en Docker:
+la demo. Después del login, la pantalla principal es el **chat con el agente**:
+texto, adjuntos (PNG/JPG/WEBP/TXT/LOG) y botones de **Aprobar / Rechazar** para
+las acciones que requieren confirmación.
 
 ```bash
-# build de producción (imagen con el dist ya compilado)
-docker compose build frontend
-
 # tests (vitest dentro de la imagen de build)
 docker compose -f docker-compose.yml -f docker-compose.dev.yml run --rm \
   --entrypoint sh frontend-build -c "npm ci --silent && npm test"
+
+# build de producción (imagen con el dist ya compilado)
+docker compose build frontend
 ```
 
 Para el dev server de Vite dentro de Docker hace falta un servicio con

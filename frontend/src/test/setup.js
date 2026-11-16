@@ -7,6 +7,7 @@ afterEach(() => {
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
   window.localStorage.clear();
+  window.sessionStorage.clear();
 });
 
 /** Construye una Response JSON con el status dado. */
